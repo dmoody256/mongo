@@ -786,14 +786,9 @@ class NinjaState:
         generate_depfile(
             self.env,
             ninja_file_path,
-            [self.env.File("#SConstruct").path] + glob("src/**/SConscript", recursive=True)
+            self.env['NINJA_REGENERATE_DEPS']
         )
 
-        # TODO: We're working on getting an API into SCons that will
-        # allow us to query the actual SConscripts used. Right now
-        # this glob method has deficiencies like skipping
-        # jstests/SConscript and being specific to the MongoDB
-        # repository layout.
         ninja.build(
             ninja_file_path,
             rule="REGENERATE",
@@ -1314,6 +1309,11 @@ def generate(env):
     ninja_file = env.Ninja(target=ninja_file_name, source=[])
     env.AlwaysBuild(ninja_file)
     env.Alias("$NINJA_ALIAS_NAME", ninja_file)
+
+    # TODO: API for getting the SConscripts programmatically
+    # exists upstream: https://github.com/SCons/scons/issues/3625
+    env['NINJA_REGENERATE_DEPS'] = env.get('NINJA_REGENERATE_DEPS',
+        [env.File("#SConstruct").path] + glob("src/**/SConscript", recursive=True))
 
     # This adds the required flags such that the generated compile
     # commands will create depfiles as appropriate in the Ninja file.
