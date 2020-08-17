@@ -203,6 +203,31 @@ class LibdepLinter(object):
         return deps_dependents
 
     @linter_rule
+    def linter_rule_leaf_node_no_deps(self, libdep):
+        """
+        LIBDEP RULE:
+            Nodes marked explicitly as a lead node should not have any dependencies,
+            unless those dependencies are marked as explicitly allowed as leaf node
+            dependencies.
+        """
+        if not self._check_for_lint_tags('lint-leaf-node-no-deps'):
+            return
+
+        # strip the libdep down to its basename based off the libdeps define prefix and suffix
+        libdep_type = libdep.target_node.builder.get_name(libdep.target_node.env)
+        libdep_prefix = self.env["BUILDERS"][libdep_type].get_prefix(libdep.target_node.env)
+        libdep_suffix = self.env["BUILDERS"][libdep_type].get_suffix(libdep.target_node.env)
+        libdep_no_ixes = os.path.basename(str(libdep))[len(libdep_prefix):-len(libdep_suffix)]
+
+        # either the libdep exmepts itself of the target node has an exemption explictly for the libdep
+        if (not self._check_for_lint_tags('lint-leaf-node-allowed-dep', libdep.target_node.env) and
+            not self._check_for_lint_tags(f'lint-leaf-node-allow-dep-{libdep_no_ixes}')):
+            target_type = self.target[0].builder.get_name(self.env)
+            self._raise_libdep_lint_exception(
+                f"{target_type} '{self.target[0]}' has dependency '{str(libdep)}' and is marked explicitly as a leaf node."
+            )
+
+    @linter_rule
     def linter_rule_no_dups(self, libdep):
         """
         LIBDEP RULE:

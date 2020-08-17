@@ -543,6 +543,9 @@ gperftoolsEnv.Library(
         "shim_allocator.cpp",
     ],
     DISABLE_ALLOCATOR_SHIM_INJECTION=True,
+    LIBDEPS_TAGS=[
+        'lint-leaf-node-allowed-dep'
+    ],
 )
 
 
