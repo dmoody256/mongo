@@ -179,15 +179,16 @@ class LibdepLinter(object):
         else:
             raise LibdepLinterError(message)
 
-    def _check_for_lint_tags(self, lint_tag, env=None):
+    def _check_for_lint_tags(self, lint_tag, env=None, inclusive_tag=False):
         """
         Used to get the lint tag from the environment,
         and if printing instead of raising exceptions,
         will ignore the tags.
         """
 
-        # ignore LIBDEP_TAGS if printing was selected
-        if self.__class__.print_linter_errors:
+        # ignore LIBDEP_TAGS if printing was selected and the tag is
+        # exclusive
+        if not inclusive_tag and self.__class__.print_linter_errors:
             return False
 
         target_env = env if env else self.env
@@ -206,11 +207,11 @@ class LibdepLinter(object):
     def linter_rule_leaf_node_no_deps(self, libdep):
         """
         LIBDEP RULE:
-            Nodes marked explicitly as a lead node should not have any dependencies,
+            Nodes marked explicitly as a leaf node should not have any dependencies,
             unless those dependencies are marked as explicitly allowed as leaf node
             dependencies.
         """
-        if not self._check_for_lint_tags('lint-leaf-node-no-deps'):
+        if not self._check_for_lint_tags('lint-leaf-node-no-deps', inclusive_tag=True):
             return
 
         # strip the libdep down to its basename based off the libdeps define prefix and suffix
@@ -219,13 +220,15 @@ class LibdepLinter(object):
         libdep_suffix = self.env["BUILDERS"][libdep_type].get_suffix(libdep.target_node.env)
         libdep_no_ixes = os.path.basename(str(libdep))[len(libdep_prefix):-len(libdep_suffix)]
 
-        # either the libdep exmepts itself of the target node has an exemption explictly for the libdep
-        if (not self._check_for_lint_tags('lint-leaf-node-allowed-dep', libdep.target_node.env) and
-            not self._check_for_lint_tags(f'lint-leaf-node-allow-dep-{libdep_no_ixes}')):
-            target_type = self.target[0].builder.get_name(self.env)
-            self._raise_libdep_lint_exception(
-                f"{target_type} '{self.target[0]}' has dependency '{str(libdep)}' and is marked explicitly as a leaf node."
-            )
+        # either the libdep exempts itself or the target node has an exemption explicitly for the libdep
+        if (self._check_for_lint_tags('lint-leaf-node-allowed-dep', libdep.target_node.env) or
+            self._check_for_lint_tags(f'lint-leaf-node-allow-dep-{libdep_no_ixes}')):
+            return
+
+        target_type = self.target[0].builder.get_name(self.env)
+        self._raise_libdep_lint_exception(
+            f"{target_type} '{self.target[0]}' has dependency '{str(libdep)}' and is marked explicitly as a leaf node."
+        )
 
     @linter_rule
     def linter_rule_no_dups(self, libdep):
