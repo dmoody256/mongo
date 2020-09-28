@@ -3553,7 +3553,41 @@ tasks:
       params:
         working_dir: src
         shell: bash
-        script: ninja -f build.ninja
+        script: |
+          ${activate_virtualenv}
+          python -m pip install ninja
+          ninja -f build.ninja
+
+- name: compile_ninja_next
+  commands:
+    - func: "scons compile"
+      vars:
+        task_install_action:
+            default
+        task_compile_flags: >-
+          --build-tools=next
+          --ninja
+        targets:
+          generate-ninja
+    - command: shell.exec
+      params:
+        working_dir: src
+        shell: bash
+        script: |
+          ${activate_virtualenv}
+          python -m pip install ninja
+          ninja -f build.ninja
+
+- name: compile_build_tools_next
+  commands:
+    - func: "scons compile"
+      vars:
+        task_install_action:
+            default
+        task_compile_flags: >-
+          --build-tools=next
+        targets:
+          install-core
 
 ## compile_all - build all scons targets ##
 - name: compile_all
@@ -8357,6 +8391,12 @@ task_groups:
   - package
 
 - <<: *compile_task_group_template
+  name: compile_next_TG
+  tasks:
+  - compile_build_tools_next
+  - compile_ninja_next
+
+- <<: *compile_task_group_template
   name: compile_ninja_TG
   tasks:
   - compile_ninja
@@ -8757,6 +8797,9 @@ buildvariants:
     scons_cache_scope: shared
   tasks:
   - name: compile_all_run_unittests_TG
+    distros:
+    - ubuntu1804-build
+  - name: compile_next_TG
     distros:
     - ubuntu1804-build
   - name: compile_ninja_TG
@@ -9213,6 +9256,9 @@ buildvariants:
   - name: compile_all_run_unittests_TG
     distros:
     - ubuntu2004-large
+  - name: compile_next_TG
+    distros:
+    - ubuntu2004-large
   - name: compile_ninja_TG
   - name: .aggfuzzer .common !.multiversion
   - name: audit
@@ -9566,6 +9612,9 @@ buildvariants:
   - name: compile_all_run_unittests_TG
     distros:
     - windows-64-vs2019-large
+  - name: compile_next_TG
+    distros:
+    - windows-64-vs2019-large
   - name: .aggregation !.auth !.encrypt
   - name: aggregation_expression_multiversion_fuzzer_gen
   - name: aggregation_expression_optimization_fuzzer_gen
@@ -9637,6 +9686,9 @@ buildvariants:
     push_arch: x86_64-enterprise
   tasks:
   - name: compile_TG
+    distros:
+    - windows-64-vs2019-large
+  - name: compile_next_TG
     distros:
     - windows-64-vs2019-large
   # - name: burn_in_tests_gen
@@ -9864,6 +9916,9 @@ buildvariants:
   - name: compile_TG
     distros:
     - windows-64-vs2019-large
+  - name: compile_next_TG
+    distros:
+    - windows-64-vs2019-large
   - name: audit
   # Do not add more tasks to this list.
 
@@ -9930,6 +9985,7 @@ buildvariants:
     num_scons_link_jobs_available: 0.99
   tasks:
   - name: compile_all_run_unittests_TG
+  - name: compile_next_TG
   - name: aggregation
   - name: auth_gen
   - name: causally_consistent_jscore_txns_passthrough
@@ -9961,6 +10017,7 @@ buildvariants:
     resmoke_jobs_max: 6
   tasks:
   - name: compile_all_run_unittests_TG
+  - name: compile_next_TG
   - name: audit
   - name: auth_audit_gen
   - name: causally_consistent_jscore_txns_passthrough
@@ -10764,6 +10821,9 @@ buildvariants:
   - name: compile_all_run_unittests_TG
     distros:
     - rhel70
+  - name: compile_next_TG
+    distros:
+    - rhel70
   - name: .aggfuzzer
   - name: audit
   - name: auth_audit_gen
@@ -11008,6 +11068,9 @@ buildvariants:
     num_scons_link_jobs_available: 0.99
   tasks:
   - name: compile_TG
+    distros:
+    - ubuntu1604-build
+  - name: compile_next_TG
     distros:
     - ubuntu1604-build
   - name: jsCore
