@@ -1096,8 +1096,6 @@ def get_command(env, node, action):  # pylint: disable=too-many-branches
         if isinstance(provider_dep, SCons.Node.Node) or os.path.exists(provider_dep):
             implicit.append(provider_dep)
             continue
-        else:
-            print(f"Could not make provider_dep work as node or locally {type(provider_dep)} {os.path.abspath(provider_dep)}")
 
         # in some case the tool could be in the local directory and be suppled without the ext
         # such as in windows, so append the executable suffix and check.
@@ -1106,17 +1104,13 @@ def get_command(env, node, action):  # pylint: disable=too-many-branches
         if os.path.exists(provider_dep_ext):
             implicit.append(provider_dep_ext)
             continue
-        else:
-            print(f"Could not resolve with extension on {provider_dep_ext}")
 
         # Many commands will assume the binary is in the path, so
         # we accept this as a possible input from a given command.
-        provider_dep_abspath = sub_env.WhereIs(provider_dep)
+        provider_dep_abspath = sub_env.WhereIs(provider_dep) or sub_env.WhereIs(provider_dep, path=os.environ["PATH"])
         if provider_dep_abspath:
             implicit.append(provider_dep_abspath)
             continue
-        else:
-            print(f"Could not resolve with abs path {provider_dep_abspath}")
 
         # Possibly these could be ignore and the build would still work, however it may not always
         # rebuild correctly, so we hard stop, and force the user to fix the issue with the provided
