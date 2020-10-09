@@ -4533,12 +4533,14 @@ def pch_action(env, source, target):
             newline_escape = False
 
     rewrite = True
-    if os.path.exists(str(target[0])):
+    if os.path.exists(str(target[0].abspath).strip()):
         with open(str(target[0])) as f:
             rewrite = newcontents != f.read()
+            print("need to rewrite " + str(rewrite))
 
     if rewrite:
         with open(str(target[0]), 'w') as f:
+            print("rewriting! " + str(target[0]))
             f.write(newcontents)
 
     with open(str(target[1]), 'w') as f:
@@ -4561,8 +4563,9 @@ def pch_emitter(target, source, env):
         pch_header = os.path.splitext(str(source_file))[0] + "_pch.hpp"
         pch_source = os.path.splitext(str(source_file))[0] + "_pch.cpp"
         pch_output = os.path.splitext(str(source_file))[0] + "_pch.gch"
-
+        Precious(pch_header)
         action = env.Command([pch_header, pch_source], source, pch_action)
+
         env.Command(pch_output, [action[0]], '$SHCXX -x c++-header $SOURCES -o $TARGET $SHCXXFLAGS $SHCCFLAGS $_CCCOMCOM')
         #Depends(pch_output, action)
         Depends(target, pch_output)
