@@ -463,6 +463,7 @@ commonEnv.Library(
         'common/uvectr64.cpp',
         'common/wintz.c',
     ],
+    PRECOMPILED_HEADER=False,
     LIBDEPS=[
         'icu_data',
     ],

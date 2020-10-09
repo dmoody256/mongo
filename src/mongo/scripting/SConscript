@@ -113,6 +113,7 @@ if usemozjs:
             env.Idlc('mozjs/engine.idl')[0],
             env.Idlc('mozjs/scripting_util.idl')[0],
         ],
+        PRECOMPILED_HEADER=False,
         LIBDEPS=[
             '$BUILD_DIR/mongo/db/service_context',
             '$BUILD_DIR/mongo/shell/mongojs',

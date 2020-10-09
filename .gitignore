@@ -10,6 +10,9 @@
 /perf.data.old
 /massif.out.*
 
+*_pch.hpp
+*_pch.cpp
+*_pch.gch
 *~
 *.swp
 *.o

@@ -101,6 +101,7 @@ env.Library(
         'strategy.cpp',
         env.Idlc('cluster_commands.idl')[0],
     ],
+    PRECOMPILED_HEADER=True,
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/commands/servers',
     ],

@@ -2098,6 +2098,8 @@ elif env.TargetOSIs('windows'):
         ],
     )
 
+
+
 # When building on visual studio, this sets the name of the debug symbols file
 if env.ToolchainIs('msvc'):
     env['PDB'] = '${TARGET.base}.pdb'
@@ -4489,6 +4491,129 @@ def env_windows_resource_file(env, path):
         return []
 
 env.AddMethod(env_windows_resource_file, 'WindowsResourceFile')
+
+def comment_remover(text):
+    def replacer(match):
+        s = match.group(0)
+        if s.startswith('/'):
+            return " " # note: a space and not an empty string
+        else:
+            return s
+    pattern = re.compile(
+        r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+        re.DOTALL | re.MULTILINE
+    )
+    return re.sub(pattern, replacer, text)
+
+def pch_action(env, source, target):
+
+    contents = ""
+    with open(str(source[0])) as f:
+        contents = f.read()
+        contents = comment_remover(contents).splitlines()
+
+    newline_escape = False
+
+    newcontents=""
+    newcontents += "#pragma once\n"
+
+    for line in contents:
+        stripped_line = line.strip()
+
+        if stripped_line == "":
+            continue
+        if stripped_line.startswith("#") or newline_escape:
+            if stripped_line.startswith("#include") and ".c" in stripped_line:
+                pass
+            else:
+                newcontents += line + "\n"
+            if stripped_line.endswith('\\'):
+                newline_escape = True
+        if not stripped_line.endswith('\\'):
+            newline_escape = False
+
+    rewrite = True
+    if os.path.exists(str(target[0])):
+        with open(str(target[0])) as f:
+            rewrite = newcontents != f.read()
+
+    if rewrite:
+        with open(str(target[0]), 'w') as f:
+            f.write(newcontents)
+
+    with open(str(target[1]), 'w') as f:
+        f.write("#include \"" + os.path.splitext(os.path.basename(str(source[0])))[0] + "_pch.hpp\"\n" )
+        for line in contents:
+            stripped_line = line.strip()
+            if (stripped_line.startswith("#include")
+                and ".c" not in stripped_line):
+                pass
+            else:
+                f.write(line + "\n")
+
+def pch_emitter(target, source, env):
+
+    if not any("conftest" in str(t) for t in target) and env.get('PRECOMPILED_HEADER', True):
+
+        source_file = source
+        if isinstance(source, list):
+            source_file = source[0]
+        pch_header = os.path.splitext(str(source_file))[0] + "_pch.hpp"
+        pch_source = os.path.splitext(str(source_file))[0] + "_pch.cpp"
+        pch_output = os.path.splitext(str(source_file))[0] + "_pch.gch"
+
+        action = env.Command([pch_header, pch_source], source, pch_action)
+        env.Command(pch_output, [action[0]], '$SHCXX -x c++-header $SOURCES -o $TARGET $SHCXXFLAGS $SHCCFLAGS $_CCCOMCOM')
+        #Depends(pch_output, action)
+        Depends(target, pch_output)
+
+        return (target, pch_source)
+    else:
+        return (target, source)
+
+
+
+
+for target_builder in ['SharedObject', 'Object']:
+    # Cribbed from Tool/cc.py and Tool/c++.py. It would be better if
+    # we could obtain this from SCons.
+    _CSuffixes = [".c"]
+    if not SCons.Util.case_sensitive_suffixes(".c", ".C"):
+        _CSuffixes.append(".C")
+
+    _CXXSuffixes = [".cpp", ".cc", ".cxx", ".c++", ".C++"]
+    if SCons.Util.case_sensitive_suffixes(".c", ".C"):
+        _CXXSuffixes.append(".C")
+
+    suffixes = _CXXSuffixes
+    object_builder = env['BUILDERS'][target_builder]
+    emitterdict = object_builder.builder.emitter
+    for suffix in emitterdict.keys():
+        if not suffix in suffixes:
+            continue
+        base = emitterdict[suffix]
+        emitterdict[suffix] = SCons.Builder.ListEmitter(
+            [base, pch_emitter]
+        )
+
+    def pch_header_cli(source, target, env, for_signature):
+
+        if env.get('PRECOMPILED_HEADER', True):
+
+            return "-include-pch ${SOURCE.base}.gch"
+        else:
+            return ""
+    env['_PCH_HEADER'] = pch_header_cli
+    env['SHCXXCOM'] = '$SHCXX -o $TARGET -c $SHCXXFLAGS $SHCCFLAGS $_CCCOMCOM $_PCH_HEADER $SOURCES'
+
+
+    # base_action = env['BUILDERS'][target_builder].action
+    # if not isinstance(base_action, SCons.Action.ListAction):
+    #     base_action = SCons.Action.ListAction([base_action])
+    # print(base_action.list)
+    # base_action.list.append(
+    #     SCons.Action.Action(pch_action)
+    # )
 
 # --- lint ----
 
