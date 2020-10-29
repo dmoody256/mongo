@@ -103,6 +103,7 @@ tlEnv.Library(
         '$BUILD_DIR/third_party/shim_asio',
         'transport_layer_common',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -147,7 +148,8 @@ zlibEnv.Library(
         '$BUILD_DIR/third_party/shim_snappy',
         '$BUILD_DIR/third_party/shim_zlib',
         '$BUILD_DIR/third_party/shim_zstd',
-    ]
+    ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -199,6 +201,7 @@ tlEnv.CppUnitTest(
         'transport_layer_common',
         'transport_layer_mock',
     ],
+    UNITY_BUILD=False
 )
 
 tlEnv.CppIntegrationTest(

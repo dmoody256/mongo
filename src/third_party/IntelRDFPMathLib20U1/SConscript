@@ -386,7 +386,8 @@ libenv.Library(
     LIBS=libenv['LIBS'] + libs,
     LIBDEPS_TAGS=[
         'init-no-global-side-effects',
-    ]
+    ],
+    UNITY_BUILD=False
 )
 
 if env["BUILDERS"].get("Ninja", None) is not None:

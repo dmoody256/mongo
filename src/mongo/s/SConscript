@@ -192,7 +192,8 @@ env.Library(
         '$BUILD_DIR/mongo/db/repl/optime',
         '$BUILD_DIR/mongo/idl/feature_flag',
         '$BUILD_DIR/mongo/idl/idl_parser',
-    ]
+    ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -639,4 +640,5 @@ env.CppUnitTest(
         'write_ops/batch_write_types',
         'write_ops/cluster_write_ops',
     ],
+    UNITY_BUILD=False
 )

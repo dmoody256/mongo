@@ -84,7 +84,8 @@ def unity_build_emitter(target, source, env):
 
             if (c_source_ext not in c_suffixes
                 or not os.path.exists(c_source_file)
-                or '_gen' in c_source_file):
+                or '_gen' in c_source_file
+                or os.path.basename(c_source_file) in [os.path.basename(ignored) for ignored in env.get('UNITY_BUILD_EXCEPTIONS', [])]):
 
                 untouched_source.append(s)
                 continue
@@ -96,8 +97,19 @@ def unity_build_emitter(target, source, env):
             include_map[unity_source] = c_source_file
             add_to_src_map(src_map, unity_source, c_source_file)
 
-        for t in src_map.keys():
+        max_files = env.get("UNITY_BUILD_MAX_FILES", 0)
+        if max_files > 0:
+            for t in list(src_map):
+                chunks = 1
+                while len(src_map[t]) > max_files:
+                    removed_files = src_map[t][-max_files:]
+                    src_map[t][:] = src_map[t][:-max_files]
+                    new_unity_source = os.path.splitext(t)[0] + str(chunks) + os.path.splitext(t)[1]
+                    src_map[new_unity_source] = removed_files[:]
+                    include_map[new_unity_source] = include_map[t]
+                    chunks += 1
 
+        for t in src_map.keys():
             unity_sources.append(env.Command(
                 target=os.path.basename(t),
                 source=src_map[t],
@@ -119,7 +131,7 @@ def unity_build_emitter(target, source, env):
                 source=s,
                 CPPPATH=env.get('CPPPATH', []) + [os.path.dirname(include_map[str(s.path)])],
                 CCFLAGS=env.get('CCFLAGS', []) + ["-Wno-macro-redefined"],
-                CPPDEFINES='UNITY_BUILDS'
+                CPPDEFINES=env.get('CPPDEFINES', []) + ['UNITY_BUILDS']
             ))
 
         env.Depends(target, unity_objs)
@@ -147,7 +159,6 @@ def setup_ninja(env):
             },
         }
     env.NinjaRegisterFunctionHandler('generate_unity_source_action', unity_build_funtion_action_conversion)
-
 
 def exists(env):
     return True

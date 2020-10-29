@@ -347,4 +347,5 @@ env.CppUnitTest(
         "query_request",
         "query_test_service_context",
     ],
+    UNITY_BUILD=False
 )

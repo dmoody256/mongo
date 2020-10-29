@@ -208,6 +208,7 @@ wtlib = env.Library(
     LIBDEPS_TAGS=[
         'init-no-global-side-effects',
     ],
+    UNITY_BUILD=False
 )
 
 env.Depends([cslib, wtlib], [filelistfile, version_file])
@@ -232,4 +233,5 @@ wtbin = wtbinEnv.Program(
     source=Glob("src/utilities/*.c"),
     LIBDEPS=["wiredtiger"],
     AIB_COMPONENT="dist-test",
+    UNITY_BUILD=False
 )

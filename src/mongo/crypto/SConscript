@@ -100,4 +100,5 @@ env.CppUnitTest(
         'aead_encryption' if "tom" not in env["MONGO_CRYPTO"] else [],
         'sha_block_${MONGO_CRYPTO}',
     ],
+    UNITY_BUILD=False
 )

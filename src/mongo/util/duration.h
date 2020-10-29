@@ -42,6 +42,7 @@
 #include "mongo/util/assert_util.h"
 #include "mongo/util/str.h"
 
+
 namespace mongo {
 
 class BSONObj;
@@ -59,6 +60,8 @@ using Seconds = Duration<std::ratio<1>>;
 using Minutes = Duration<std::ratio<60>>;
 using Hours = Duration<std::ratio<3600>>;
 using Days = Duration<std::ratio<86400>>;
+
+
 
 //
 // Streaming output operators for common duration types. Writes the numerical value followed by
@@ -488,4 +491,12 @@ StringBuilderImpl<Allocator>& operator<<(StringBuilderImpl<Allocator>& os, Durat
     return streamPut(os, dp);
 }
 
+namespace {
+const Milliseconds kZeroMs = Milliseconds{0};
+}
+
 }  // namespace mongo
+
+
+
+

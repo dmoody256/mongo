@@ -49,7 +49,7 @@
 namespace mongo {
 namespace {
 
-const int kMaxObjectPerChunk{250000};
+const int kSplitMaxObjectPerChunk{250000};
 const int estimatedAdditionalBytesPerItemInBSONArray{2};
 
 BSONObj prettyKey(const BSONObj& keyPattern, const BSONObj& key) {
@@ -72,7 +72,7 @@ std::vector<BSONObj> splitVector(OperationContext* opCtx,
 
     // Always have a default value for maxChunkObjects
     if (!maxChunkObjects) {
-        maxChunkObjects = kMaxObjectPerChunk;
+        maxChunkObjects = kSplitMaxObjectPerChunk;
     }
 
     {

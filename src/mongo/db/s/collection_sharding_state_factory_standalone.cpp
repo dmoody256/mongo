@@ -36,9 +36,9 @@
 namespace mongo {
 namespace {
 
-class UnshardedCollection : public ScopedCollectionDescription::Impl {
+class UnshardedCollectionFactory : public ScopedCollectionDescription::Impl {
 public:
-    UnshardedCollection() = default;
+    UnshardedCollectionFactory() = default;
 
     const CollectionMetadata& get() override {
         return _metadata;
@@ -48,16 +48,16 @@ private:
     CollectionMetadata _metadata;
 };
 
-const auto kUnshardedCollection = std::make_shared<UnshardedCollection>();
+const auto kUnshardedCollectionFactory = std::make_shared<UnshardedCollectionFactory>();
 
 class CollectionShardingStateStandalone final : public CollectionShardingState {
 public:
     ScopedCollectionDescription getCollectionDescription(OperationContext* opCtx) override {
-        return {kUnshardedCollection};
+        return {kUnshardedCollectionFactory};
     }
     ScopedCollectionFilter getOwnershipFilter(OperationContext*,
                                               OrphanCleanupPolicy orphanCleanupPolicy) override {
-        return {kUnshardedCollection};
+        return {kUnshardedCollectionFactory};
     }
     void checkShardVersionOrThrow(OperationContext*) override {}
 

@@ -459,6 +459,13 @@ add_option('linker',
     type='choice'
 )
 
+add_option('unity-builds',
+    choices=['on', 'off'],
+    default='off',
+    help='Enable the use of unity builds to increase overall build time.',
+    type='choice'
+)
+
 variable_parse_mode_choices=['auto', 'posix', 'other']
 add_option('variable-parse-mode',
     choices=variable_parse_mode_choices,
@@ -1677,6 +1684,12 @@ if not env.Verbose():
     env.Append( LINKCOMSTR = "Linking $TARGET" )
     env.Append( SHLINKCOMSTR = env["LINKCOMSTR"] )
     env.Append( ARCOMSTR = "Generating library $TARGET" )
+
+if get_option('unity-builds') == 'on':
+    if get_option('build-tools') == 'next':
+        unity_builds = Tool('unity')
+        if unity_builds.exists(env):
+            unity_builds(env)
 
 # Link tools other than mslink don't setup TEMPFILE in LINKCOM,
 # disabling SCons automatically falling back to a temp file when
@@ -4057,6 +4070,8 @@ if 'ICECC' in env and env['ICECC']:
     if not icecream.exists(env):
         env.FatalError(f"Failed to load icecream tool with ICECC={env['ICECC']}")
     icecream(env)
+    if get_option('unity-builds') == 'on':
+        env['UNITY_BUILD_MAX_FILES'] = 3
 
 # Defaults for SCons provided flags. SetOption only sets the option to our value
 # if the user did not provide it. So for any flag here if it's explicitly passed
@@ -4136,6 +4151,9 @@ if get_option('ninja') != 'disabled':
         return dependencies
 
     env['NINJA_REGENERATE_DEPS'] = ninja_generate_deps
+
+    if get_option('build-tools') == 'next' and get_option('unity-builds') == 'on':
+        env.NinjaUnitySetup()
 
     if libdeps_typeinfo and get_option('build-tools') == 'next':
         # ninja will not handle the list action libdeps creates so in order for

@@ -56,4 +56,5 @@ myEnv.Library(
     LIBDEPS_TAGS=[
         'init-no-global-side-effects',
     ],
+    UNITY_BUILD=False
 )

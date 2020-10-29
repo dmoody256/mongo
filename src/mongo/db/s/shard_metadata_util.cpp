@@ -52,7 +52,7 @@ namespace shardmetadatautil {
 
 namespace {
 
-const WriteConcernOptions kLocalWriteConcern(1,
+const WriteConcernOptions kMetaLocalWriteConcern(1,
                                              WriteConcernOptions::SyncMode::UNSET,
                                              Milliseconds(0));
 
@@ -418,7 +418,7 @@ Status dropChunksAndDeleteCollectionsEntry(OperationContext* opCtx, const Namesp
         // Drop the corresponding config.chunks.ns collection
         BSONObj result;
         if (!client.dropCollection(
-                ChunkType::ShardNSPrefix + nss.ns(), kLocalWriteConcern, &result)) {
+                ChunkType::ShardNSPrefix + nss.ns(), kMetaLocalWriteConcern, &result)) {
             Status status = getStatusFromCommandResult(result);
             if (status != ErrorCodes::NamespaceNotFound) {
                 uassertStatusOK(status);
@@ -443,7 +443,7 @@ void dropChunks(OperationContext* opCtx, const NamespaceString& nss) {
 
     // Drop the config.chunks collection associated with namespace 'nss'.
     BSONObj result;
-    if (!client.dropCollection(ChunkType::ShardNSPrefix + nss.ns(), kLocalWriteConcern, &result)) {
+    if (!client.dropCollection(ChunkType::ShardNSPrefix + nss.ns(), kMetaLocalWriteConcern, &result)) {
         auto status = getStatusFromCommandResult(result);
         if (status != ErrorCodes::NamespaceNotFound) {
             uassertStatusOK(status);

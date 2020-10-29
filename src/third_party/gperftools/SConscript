@@ -126,4 +126,5 @@ env.Library(
     # We don't want the shim_allocator hack to apply to this library, since
     # otherwise we would create a loop.
     DISABLE_ALLOCATOR_SHIM_INJECTION=True,
+    UNITY_BUILD=False
 )

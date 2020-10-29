@@ -275,7 +275,8 @@ env.Library(
     ],
     LIBDEPS_TYPEINFO=[
         '$BUILD_DIR/mongo/db/service_context_test_fixture',
-    ]
+    ],
+    UNITY_BUILD=False
 )
 
 

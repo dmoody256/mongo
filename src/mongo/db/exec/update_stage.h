@@ -45,6 +45,11 @@ class OperationContext;
 class OpDebug;
 struct PlanSummaryStats;
 
+namespace{
+const char idFieldName[] = "_id";
+const FieldRef idFieldRef(idFieldName);
+
+}  // namespace
 struct UpdateStageParams {
     UpdateStageParams(const UpdateRequest* r, UpdateDriver* d, OpDebug* o)
         : request(r), driver(d), opDebug(o), canonicalQuery(nullptr) {}

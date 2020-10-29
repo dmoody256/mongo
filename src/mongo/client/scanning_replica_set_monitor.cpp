@@ -84,7 +84,7 @@ using CallbackHandle = TaskExecutor::CallbackHandle;
 // Intentionally chosen to compare worse than all known latencies.
 const int64_t unknownLatency = numeric_limits<int64_t>::max();
 
-const ReadPreferenceSetting kPrimaryOnlyReadPreference(ReadPreference::PrimaryOnly, TagSet());
+
 
 //
 // Helpers for stl algorithms
@@ -351,6 +351,7 @@ Future<std::vector<HostAndPort>> ScanningReplicaSetMonitor::_getHostsOrRefresh(
     return std::move(pf.future);
 }
 HostAndPort ScanningReplicaSetMonitor::getPrimaryOrUassert() {
+    const ReadPreferenceSetting kPrimaryOnlyReadPreference(ReadPreference::PrimaryOnly, TagSet());
     return getHostOrRefresh(kPrimaryOnlyReadPreference).get();
 }
 

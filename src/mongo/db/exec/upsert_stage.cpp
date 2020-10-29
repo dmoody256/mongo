@@ -41,12 +41,7 @@ MONGO_FAIL_POINT_DEFINE(hangBeforeUpsertPerformsInsert);
 
 namespace mb = mutablebson;
 
-namespace {
 
-const char idFieldName[] = "_id";
-const FieldRef idFieldRef(idFieldName);
-
-}  // namespace
 
 UpsertStage::UpsertStage(ExpressionContext* expCtx,
                          const UpdateStageParams& params,

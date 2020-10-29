@@ -1833,7 +1833,7 @@ env.Library(
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/util/processinfo',
-    ],
+    ]
 )
 
 env.Library(
@@ -2351,6 +2351,7 @@ envWithAsio.CppUnitTest(
         'write_concern_options',
         'write_ops',
     ],
+    UNITY_BUILD=False
 )
 
 # These unit tests rely on the config_server_test_fixture, which

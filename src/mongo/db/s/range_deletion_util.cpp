@@ -68,7 +68,7 @@
 namespace mongo {
 
 namespace {
-const WriteConcernOptions kMajorityWriteConcern(WriteConcernOptions::kMajority,
+const WriteConcernOptions kRangeDelMajorityWriteConcern(WriteConcernOptions::kMajority,
                                                 WriteConcernOptions::SyncMode::UNSET,
                                                 WriteConcernOptions::kWriteConcernTimeoutSharding);
 

@@ -150,7 +150,8 @@ if wiredtiger:
             '$BUILD_DIR/mongo/db/storage/wiredtiger/storage_wiredtiger',
             '$BUILD_DIR/mongo/db/storage/wiredtiger/storage_wiredtiger_core',
             '$BUILD_DIR/mongo/util/clock_source_mock',
-        ]
+        ],
+        UNITY_BUILD=False
     )
 
     wtEnv.Library(

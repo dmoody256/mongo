@@ -43,12 +43,6 @@ namespace fts {
 
 namespace dps = ::mongo::dotted_path_support;
 
-namespace {
-void _addFTSStuff(BSONObjBuilder* b) {
-    b->append("_fts", INDEX_NAME);
-    b->append("_ftsx", 1);
-}
-}  // namespace
 
 const FTSLanguage& FTSSpec::_getLanguageToUseV1(const BSONObj& userDoc) const {
     BSONElement e = userDoc[_languageOverrideField];

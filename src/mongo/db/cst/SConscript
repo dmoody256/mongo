@@ -43,7 +43,8 @@ env.CppUnitTest(
         '$BUILD_DIR/mongo/db/matcher/expressions_mongod_only',
         '$BUILD_DIR/mongo/db/query/query_test_service_context',
         'cst',
-    ]
+    ],
+    UNITY_BUILD=False
 )
 
 env.CppUnitTest(
@@ -56,7 +57,8 @@ env.CppUnitTest(
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/query/query_test_service_context',
         'cst',
-    ]
+    ],
+    UNITY_BUILD=False
 )
 
 env.Benchmark(

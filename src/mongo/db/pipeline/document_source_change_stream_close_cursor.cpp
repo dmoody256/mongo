@@ -33,25 +33,6 @@
 
 namespace mongo {
 
-namespace {
-
-// Returns true if the given 'operationType' should invalidate the change stream based on the
-// namespace in 'pExpCtx'.
-bool isInvalidatingCommand(const boost::intrusive_ptr<ExpressionContext>& pExpCtx,
-                           StringData operationType) {
-    if (pExpCtx->isSingleNamespaceAggregation()) {
-        return operationType == DocumentSourceChangeStream::kDropCollectionOpType ||
-            operationType == DocumentSourceChangeStream::kRenameCollectionOpType ||
-            operationType == DocumentSourceChangeStream::kDropDatabaseOpType;
-    } else if (!pExpCtx->isClusterAggregation()) {
-        return operationType == DocumentSourceChangeStream::kDropDatabaseOpType;
-    } else {
-        return false;
-    }
-};
-
-}  // namespace
-
 DocumentSource::GetNextResult DocumentSourceCloseCursor::doGetNext() {
     // Close cursor if we have returned an invalidate entry.
     if (_shouldCloseCursor) {

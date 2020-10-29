@@ -38,7 +38,8 @@
 namespace mongo {
 namespace {
 
-const auto getRegistry = ServiceContext::declareDecoration<ActiveShardCollectionRegistry>();
+const auto getActiveShardRegistry =
+    ServiceContext::declareDecoration<ActiveShardCollectionRegistry>();
 
 bool ActiveShardsvrShardCollectionEqualsNewRequest(
     const ShardsvrShardCollectionRequest& activeRequest,
@@ -83,7 +84,7 @@ ActiveShardCollectionRegistry::~ActiveShardCollectionRegistry() {
 }
 
 ActiveShardCollectionRegistry& ActiveShardCollectionRegistry::get(ServiceContext* service) {
-    return getRegistry(service);
+    return getActiveShardRegistry(service);
 }
 
 ActiveShardCollectionRegistry& ActiveShardCollectionRegistry::get(OperationContext* opCtx) {

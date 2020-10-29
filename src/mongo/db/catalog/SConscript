@@ -447,7 +447,7 @@ env.Library(
     ],
     LIBDEPS_PRIVATE=[
         'database_holder',
-    ],
+    ]
 )
 
 env.Library(
@@ -550,4 +550,5 @@ env.CppUnitTest(
         'validate_idl',
         'validate_state',
     ],
+    UNITY_BUILD=False
 )

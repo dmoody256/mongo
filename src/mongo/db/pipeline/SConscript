@@ -296,6 +296,10 @@ pipelineEnv.Library(
         '$BUILD_DIR/mongo/db/commands/test_commands_enabled',
         '$BUILD_DIR/mongo/db/sorter/sorter_idl',
         '$BUILD_DIR/mongo/rpc/command_status',
+    ],
+    UNITY_BUILD_EXCEPTIONS=[
+        'document_source_group.cpp',
+        'document_source_bucket_auto.cpp'
     ]
 )
 
@@ -438,5 +442,6 @@ env.CppUnitTest(
         'process_interface/mongos_process_interface',
         'process_interface/shardsvr_process_interface',
         'sharded_agg_helpers',
-    ]
+    ],
+    UNITY_BUILD=False
 )

@@ -137,4 +137,5 @@ env.CppUnitTest(
         "projection_executor",
         "working_set",
     ],
+    UNITY_BUILD=False
 )

@@ -63,4 +63,5 @@ env.Library( "pcrecpp", [
         "pcrecpp.cc",
         "pcre_scanner.cc",
         "pcre_stringpiece.cc",
-        ] )
+        ] ,
+        UNITY_BUILD=False)

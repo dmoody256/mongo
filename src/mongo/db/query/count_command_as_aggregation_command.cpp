@@ -37,11 +37,10 @@
 namespace mongo {
 namespace {
 
-const char kQueryField[] = "query";
 const char kLimitField[] = "limit";
 const char kSkipField[] = "skip";
-const char kHintField[] = "hint";
-const char kCollationField[] = "collation";
+const char kAggregateHintField[] = "hint";
+const char kAggregateCollationField[] = "collation";
 const char kExplainField[] = "explain";
 const char kMaxTimeMSField[] = "maxTimeMS";
 const char kReadConcernField[] = "readConcern";
@@ -82,10 +81,10 @@ StatusWith<BSONObj> countCommandAsAggregationCommand(const CountCommand& cmd,
 
     // Complete the command by appending the other options to the aggregate command.
     if (auto collation = cmd.getCollation()) {
-        aggregationBuilder.append(kCollationField, collation.get());
+        aggregationBuilder.append(kAggregateCollationField, collation.get());
     }
 
-    aggregationBuilder.append(kHintField, cmd.getHint());
+    aggregationBuilder.append(kAggregateHintField, cmd.getHint());
 
     if (auto maxTime = cmd.getMaxTimeMS()) {
         if (maxTime.get() > 0) {

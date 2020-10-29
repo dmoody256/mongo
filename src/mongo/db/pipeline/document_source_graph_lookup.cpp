@@ -48,7 +48,7 @@
 namespace mongo {
 
 namespace {
-bool foreignShardedLookupAllowed() {
+bool foreignShardedGraphLookupAllowed() {
     return getTestCommandsEnabled() && internalQueryAllowShardedLookup.load();
 }
 }  // namespace
@@ -182,7 +182,7 @@ void DocumentSourceGraphLookUp::doBreadthFirstSearch() {
     long long depth = 0;
     bool shouldPerformAnotherQuery;
     do {
-        if (!foreignShardedLookupAllowed()) {
+        if (!foreignShardedGraphLookupAllowed()) {
             // Enforce that the foreign collection must be unsharded for $graphLookup.
             _fromExpCtx->mongoProcessInterface->setExpectedShardVersion(
                 _fromExpCtx->opCtx, _fromExpCtx->ns, ChunkVersion::UNSHARDED());
@@ -365,7 +365,7 @@ void DocumentSourceGraphLookUp::performSearch() {
         if (auto staleInfo = ex.extraInfo<StaleConfigInfo>()) {
             uassert(31428,
                     "Cannot run $graphLookup with sharded foreign collection",
-                    foreignShardedLookupAllowed() || !staleInfo->getVersionWanted() ||
+                    foreignShardedGraphLookupAllowed() || !staleInfo->getVersionWanted() ||
                         staleInfo->getVersionWanted() == ChunkVersion::UNSHARDED());
         }
         throw;

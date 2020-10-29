@@ -39,40 +39,39 @@ namespace mongo {
 namespace repl {
 namespace {
 
-const std::string kCandidateIndexFieldName = "candidateIndex";
+const std::string kRequestCandidateIndexFieldName = "candidateIndex";
 const std::string kCommandName = "replSetRequestVotes";
-const std::string kConfigVersionFieldName = "configVersion";
-const std::string kConfigTermFieldName = "configTerm";
+const std::string kRequestConfigVersionFieldName = "configVersion";
+const std::string kRequestConfigTermFieldName = "configTerm";
 const std::string kDryRunFieldName = "dryRun";
 const std::string kLastAppliedOpTimeFieldName = "lastAppliedOpTime";
-const std::string kOkFieldName = "ok";
 const std::string kReasonFieldName = "reason";
-const std::string kSetNameFieldName = "setName";
-const std::string kTermFieldName = "term";
+const std::string kRequestSetNameFieldName = "setName";
+const std::string kRequestTermFieldName = "term";
 const std::string kVoteGrantedFieldName = "voteGranted";
 const std::string kOperationTime = "operationTime";
 }  // namespace
 
 
 Status ReplSetRequestVotesArgs::initialize(const BSONObj& argsObj) {
-    Status status = bsonExtractIntegerField(argsObj, kTermFieldName, &_term);
+    Status status = bsonExtractIntegerField(argsObj, kRequestTermFieldName, &_term);
     if (!status.isOK())
         return status;
 
-    status = bsonExtractIntegerField(argsObj, kCandidateIndexFieldName, &_candidateIndex);
+    status = bsonExtractIntegerField(argsObj, kRequestCandidateIndexFieldName, &_candidateIndex);
     if (!status.isOK())
         return status;
 
-    status = bsonExtractIntegerField(argsObj, kConfigVersionFieldName, &_cfgVer);
+    status = bsonExtractIntegerField(argsObj, kRequestConfigVersionFieldName, &_cfgVer);
     if (!status.isOK())
         return status;
 
     status = bsonExtractIntegerFieldWithDefault(
-        argsObj, kConfigTermFieldName, OpTime::kUninitializedTerm, &_cfgTerm);
+        argsObj, kRequestConfigTermFieldName, OpTime::kUninitializedTerm, &_cfgTerm);
     if (!status.isOK())
         return status;
 
-    status = bsonExtractStringField(argsObj, kSetNameFieldName, &_setName);
+    status = bsonExtractStringField(argsObj, kRequestSetNameFieldName, &_setName);
     if (!status.isOK())
         return status;
 
@@ -122,12 +121,12 @@ bool ReplSetRequestVotesArgs::isADryRun() const {
 
 void ReplSetRequestVotesArgs::addToBSON(BSONObjBuilder* builder) const {
     builder->append(kCommandName, 1);
-    builder->append(kSetNameFieldName, _setName);
+    builder->append(kRequestSetNameFieldName, _setName);
     builder->append(kDryRunFieldName, _dryRun);
-    builder->append(kTermFieldName, _term);
-    builder->appendIntOrLL(kCandidateIndexFieldName, _candidateIndex);
-    builder->appendIntOrLL(kConfigVersionFieldName, _cfgVer);
-    builder->appendIntOrLL(kConfigTermFieldName, _cfgTerm);
+    builder->append(kRequestTermFieldName, _term);
+    builder->appendIntOrLL(kRequestCandidateIndexFieldName, _candidateIndex);
+    builder->appendIntOrLL(kRequestConfigVersionFieldName, _cfgVer);
+    builder->appendIntOrLL(kRequestConfigTermFieldName, _cfgTerm);
     _lastAppliedOpTime.append(builder, kLastAppliedOpTimeFieldName);
 }
 
@@ -138,7 +137,7 @@ std::string ReplSetRequestVotesArgs::toString() const {
 }
 
 Status ReplSetRequestVotesResponse::initialize(const BSONObj& argsObj) {
-    auto status = bsonExtractIntegerField(argsObj, kTermFieldName, &_term);
+    auto status = bsonExtractIntegerField(argsObj, kRequestTermFieldName, &_term);
     if (!status.isOK())
         return status;
 
@@ -178,7 +177,7 @@ const std::string& ReplSetRequestVotesResponse::getReason() const {
 }
 
 void ReplSetRequestVotesResponse::addToBSON(BSONObjBuilder* builder) const {
-    builder->append(kTermFieldName, _term);
+    builder->append(kRequestTermFieldName, _term);
     builder->append(kVoteGrantedFieldName, _voteGranted);
     builder->append(kReasonFieldName, _reason);
 }

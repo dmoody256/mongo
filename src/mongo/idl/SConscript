@@ -70,4 +70,5 @@ env.CppUnitTest(
         'feature_flag',
         'server_parameter',
     ],
+    UNITY_BUILD=False
 )

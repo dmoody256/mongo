@@ -109,6 +109,7 @@ env.Library(
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/vector_clock',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -170,7 +171,8 @@ env.CppUnitTest(
         'client_metadata',
         'metadata',
         'rpc',
-    ]
+    ],
+    UNITY_BUILD=False
 )
 
 env.CppIntegrationTest(

@@ -65,7 +65,7 @@ env.Library(
         'repl_settings',
         'tenant_migration_donor',
         'timestamp_block',
-    ],
+    ]
 )
 
 env.Library(
@@ -1254,7 +1254,7 @@ env.Library(
     ],
     LIBDEPS=[
         '$BUILD_DIR/mongo/base',
-    ],
+    ]
 )
 
 env.Library(
@@ -1561,6 +1561,7 @@ env.CppUnitTest(
         'tenant_oplog_processing',
         'wait_for_majority_service',
     ],
+    UNITY_BUILD=False
 )
 
 # The following two tests appear to clash when combined with the above list.
@@ -1623,6 +1624,7 @@ env.CppUnitTest(
         'replmocks',
         'tenant_migration_cloners'
     ],
+    UNITY_BUILD=False
 )
 
 env.CppUnitTest(

@@ -67,6 +67,7 @@ env.Library(
         'update_document_diff',
         'update_nodes',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -157,4 +158,5 @@ env.CppUnitTest(
         'update_driver',
         'update_test_helpers',
     ],
+    UNITY_BUILD=False
 )

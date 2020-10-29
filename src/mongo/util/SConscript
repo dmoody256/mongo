@@ -152,6 +152,7 @@ env.Library(
     LIBDEPS=[
         '$BUILD_DIR/mongo/base',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -160,6 +161,7 @@ env.Library(
         'md5.cpp',
         'password_digest.cpp',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -182,6 +184,7 @@ env.Library(
         '$BUILD_DIR/mongo/base',
         'clock_sources',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -196,6 +199,7 @@ env.Library(
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/third_party/shim_pcrecpp',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -209,6 +213,7 @@ env.Library(
         "$BUILD_DIR/mongo/bson/util/bson_extract",
         "$BUILD_DIR/mongo/idl/server_parameter",
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -221,6 +226,7 @@ env.Library(
         "$BUILD_DIR/mongo/base",
         "$BUILD_DIR/mongo/idl/server_parameter",
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -332,7 +338,9 @@ if env['MONGO_ALLOCATOR'] in ['tcmalloc', 'tcmalloc-experimental']:
         ],
         LIBDEPS_TAGS=[
             'lint-allow-nonprivate-on-deps-dependents',
-        ]
+        ],
+        UNITY_BUILD=False
+
 
     )
 
@@ -364,6 +372,7 @@ env.Library(
     LIBDEPS=[
         '$BUILD_DIR/mongo/base',
     ],
+    UNITY_BUILD=False
 )
 
 if get_option('use-diagnostic-latches') == 'on':
@@ -456,6 +465,7 @@ env.Library(
         "$BUILD_DIR/mongo/db/server_options_core",
         "$BUILD_DIR/mongo/db/service_context",
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -479,7 +489,8 @@ env.Library(
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/idl/server_parameter',
-    ]
+    ],
+    UNITY_BUILD=False
 )
 
 
@@ -696,6 +707,7 @@ icuEnv.CppUnitTest(
         'secure_zero_memory',
         'summation',
     ],
+    UNITY_BUILD=False
 )
 
 if env.TargetOSIs('windows'):
@@ -750,6 +762,7 @@ if use_libunwind:
         # to ensure that the new library dependency is added to the
         # existing LIBDEPS state in the environment and does not
         # overwrite it.
+        UNITY_BUILD=False
     )
 
 stacktrace_test_LIBDEPS = stacktraceEnv.get('LIBDEPS', []).copy()

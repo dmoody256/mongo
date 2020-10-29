@@ -137,7 +137,7 @@ env.Library(
         '$BUILD_DIR/mongo/util/future_util',
         'resharding_txn_cloner',
         'resharding_util',
-    ],
+    ]
 )
 
 env.Library(
@@ -322,6 +322,7 @@ env.Library(
         '$BUILD_DIR/mongo/s/catalog/sharding_catalog_client_impl',
         '$BUILD_DIR/mongo/util/options_parser/options_parser',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -393,6 +394,7 @@ env.Library(
         'resharding_util',
         'sharding_runtime_d',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -511,6 +513,7 @@ env.CppUnitTest(
         'sharding_logging',
         'sharding_runtime_d',
     ],
+    UNITY_BUILD=False
 )
 
 env.CppUnitTest(
@@ -532,6 +535,7 @@ env.CppUnitTest(
         '$BUILD_DIR/mongo/executor/thread_pool_task_executor_test_fixture',
         'shard_server_test_fixture',
     ],
+    UNITY_BUILD=False
 )
 
 env.CppUnitTest(
@@ -552,6 +556,7 @@ env.CppUnitTest(
         'shard_server_test_fixture',
         'transaction_coordinator',
     ],
+    UNITY_BUILD=False
 )
 
 env.CppUnitTest(
@@ -601,4 +606,5 @@ env.CppUnitTest(
         'resharding_txn_cloner',
         'resharding_util',
     ],
+    UNITY_BUILD=False
 )

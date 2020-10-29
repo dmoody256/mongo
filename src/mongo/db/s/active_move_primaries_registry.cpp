@@ -36,7 +36,7 @@
 namespace mongo {
 namespace {
 
-const auto getRegistry = ServiceContext::declareDecoration<ActiveMovePrimariesRegistry>();
+const auto getActiveMoveRegistry = ServiceContext::declareDecoration<ActiveMovePrimariesRegistry>();
 
 }  // namespace
 
@@ -47,7 +47,7 @@ ActiveMovePrimariesRegistry::~ActiveMovePrimariesRegistry() {
 }
 
 ActiveMovePrimariesRegistry& ActiveMovePrimariesRegistry::get(ServiceContext* service) {
-    return getRegistry(service);
+    return getActiveMoveRegistry(service);
 }
 
 ActiveMovePrimariesRegistry& ActiveMovePrimariesRegistry::get(OperationContext* opCtx) {

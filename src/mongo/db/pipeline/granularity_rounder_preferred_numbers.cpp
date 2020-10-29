@@ -150,7 +150,7 @@ intrusive_ptr<GranularityRounder> GranularityRounderPreferredNumbers::create(
 }
 
 namespace {
-void uassertNonNegativeNumber(Value value) {
+void uassertPrefferdNonNegativeNumber(Value value) {
     uassert(40262,
             str::stream() << "A granularity rounder can only round numeric values, but found type: "
                           << typeName(value.getType()),
@@ -163,7 +163,7 @@ void uassertNonNegativeNumber(Value value) {
 }  // namespace
 
 Value GranularityRounderPreferredNumbers::roundUp(Value value) {
-    uassertNonNegativeNumber(value);
+    uassertPrefferdNonNegativeNumber(value);
 
     if (value.coerceToDouble() == 0.0 || std::isinf(value.coerceToDouble())) {
         return value;
@@ -248,7 +248,7 @@ Value GranularityRounderPreferredNumbers::roundUp(Value value) {
 }
 
 Value GranularityRounderPreferredNumbers::roundDown(Value value) {
-    uassertNonNegativeNumber(value);
+    uassertPrefferdNonNegativeNumber(value);
 
     if (value.coerceToDouble() == 0.0 || std::isinf(value.coerceToDouble())) {
         return value;

@@ -44,7 +44,17 @@
 
 namespace mongo {
 
+
+
 namespace fts {
+
+
+namespace {
+void _addFTSStuff(BSONObjBuilder* b) {
+    b->append("_fts", INDEX_NAME);
+    b->append("_ftsx", 1);
+}
+}
 
 extern const double MAX_WEIGHT;
 extern const double MAX_WORD_WEIGHT;
@@ -185,5 +195,5 @@ private:
     // Suffix compound key - used for covering index behavior
     std::vector<std::string> _extraAfter;
 };
-}  // namespace fts
-}  // namespace mongo
+}  // namespace
+}  // namespace

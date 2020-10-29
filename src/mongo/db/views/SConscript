@@ -63,4 +63,5 @@ env.CppUnitTest(
         'views',
         'views_mongod',
     ],
+    UNITY_BUILD=False
 )

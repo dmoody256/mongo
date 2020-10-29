@@ -71,7 +71,7 @@ using CallbackArgs = TaskExecutor::CallbackArgs;
 using CallbackHandle = TaskExecutor::CallbackHandle;
 using HandshakeStage = StreamableReplicaSetMonitorErrorHandler::HandshakeStage;
 
-const ReadPreferenceSetting kPrimaryOnlyReadPreference(ReadPreference::PrimaryOnly, TagSet());
+
 
 // Utility functions to use when finding servers
 bool minWireCompare(const ServerDescriptionPtr& a, const ServerDescriptionPtr& b) {
@@ -117,7 +117,6 @@ double pingTimeMillis(const ServerDescriptionPtr& serverDescription) {
                        : durationCount<Milliseconds>(Milliseconds::max());
 }
 
-constexpr auto kZeroMs = Milliseconds(0);
 }  // namespace
 
 
@@ -377,6 +376,7 @@ boost::optional<std::vector<HostAndPort>> StreamableReplicaSetMonitor::_getHosts
 }
 
 HostAndPort StreamableReplicaSetMonitor::getPrimaryOrUassert() {
+    const ReadPreferenceSetting kPrimaryOnlyReadPreference(ReadPreference::PrimaryOnly, TagSet());
     return getHostOrRefresh(kPrimaryOnlyReadPreference).get();
 }
 

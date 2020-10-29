@@ -77,7 +77,7 @@ const auto msmForCsr = CollectionShardingRuntime::declareDecoration<MigrationSou
 // entered
 const Hours kMaxWaitToEnterCriticalSectionTimeout(6);
 const char kWriteConcernField[] = "writeConcern";
-const WriteConcernOptions kMajorityWriteConcern(WriteConcernOptions::kMajority,
+const WriteConcernOptions kMigrationSrcMajorityWriteConcern(WriteConcernOptions::kMajority,
                                                 WriteConcernOptions::SyncMode::UNSET,
                                                 WriteConcernOptions::kWriteConcernTimeoutMigration);
 
@@ -417,7 +417,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
                                                      metadata.getCollVersion(),
                                                      currentTime.clusterTime().asTimestamp());
 
-        builder.append(kWriteConcernField, kMajorityWriteConcern.toBSON());
+        builder.append(kWriteConcernField, kMigrationSrcMajorityWriteConcern.toBSON());
     }
 
     // Read operations must begin to wait on the critical section just before we send the commit

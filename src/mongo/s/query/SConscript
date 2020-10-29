@@ -38,7 +38,8 @@ env.Library(
         '$BUILD_DIR/mongo/db/views/views',
         '$BUILD_DIR/mongo/s/query/cluster_client_cursor',
         'cluster_query',
-    ]
+    ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -175,4 +176,5 @@ env.CppUnitTest(
         "router_exec_stage",
         "store_possible_cursor",
     ],
+    UNITY_BUILD=False
 )

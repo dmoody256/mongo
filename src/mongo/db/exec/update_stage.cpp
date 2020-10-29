@@ -70,8 +70,6 @@ namespace mb = mutablebson;
 
 namespace {
 
-const char idFieldName[] = "_id";
-const FieldRef idFieldRef(idFieldName);
 
 void addObjectIDIdField(mb::Document* doc) {
     const auto idElem = doc->makeElementNewOID(idFieldName);

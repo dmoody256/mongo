@@ -257,10 +257,6 @@ Status FTSSpec::getIndexPrefix(const BSONObj& query, BSONObj* out) const {
 }
 
 namespace {
-void _addFTSStuff(BSONObjBuilder* b) {
-    b->append("_fts", INDEX_NAME);
-    b->append("_ftsx", 1);
-}
 
 Status verifyFieldNameNotReserved(StringData s) {
     if (s == "_fts" || s == "_ftsx") {

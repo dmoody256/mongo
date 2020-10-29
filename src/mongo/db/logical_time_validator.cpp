@@ -40,6 +40,7 @@
 #include "mongo/db/auth/privilege.h"
 #include "mongo/db/keys_collection_manager.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/db/refresh_interval.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/vector_clock.h"
 #include "mongo/logv2/log.h"
@@ -67,7 +68,7 @@ MONGO_INITIALIZER(InitializeAdvanceClusterTimePrivilegeVector)(InitializerContex
     return Status::OK();
 }
 
-Milliseconds kRefreshIntervalIfErrored(200);
+
 
 }  // unnamed namespace
 

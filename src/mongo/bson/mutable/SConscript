@@ -40,4 +40,5 @@ env.CppUnitTest(
         'mutable_bson',
         'mutable_bson_test_utils',
     ],
+    UNITY_BUILD=False
 )

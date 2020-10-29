@@ -4,13 +4,13 @@ Import("env")
 
 env = env.Clone()
 
-# GCC emits a warning on both v2 and v3 toolchains when compiling filesystem. 
+# GCC emits a warning on both v2 and v3 toolchains when compiling filesystem.
 # We should check if this is still needed when doing boost upgrades in the future.
 if env.ToolchainIs('GCC'):
     env.AppendUnique(CXXFLAGS=['-Wno-overloaded-virtual'])
 
 env.Library(
-    target='boost_system', 
+    target='boost_system',
     source=[
         'libs/system/src/error_code.cpp',
     ],
@@ -20,7 +20,7 @@ env.Library(
 )
 
 env.Library(
-    target='boost_filesystem', 
+    target='boost_filesystem',
     source=[
         'libs/filesystem/src/codecvt_error_category.cpp',
         'libs/filesystem/src/operations.cpp',
@@ -35,10 +35,11 @@ env.Library(
         '$BUILD_DIR/mongo/util/boost_assert_shim',
         'boost_system',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
-    target='boost_program_options', 
+    target='boost_program_options',
     source=[
         'libs/program_options/src/cmdline.cpp',
         'libs/program_options/src/config_file.cpp',
@@ -60,10 +61,11 @@ env.Library(
     LIBDEPS=[
         '$BUILD_DIR/mongo/util/boost_assert_shim',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(
-    target='boost_iostreams', 
+    target='boost_iostreams',
     source=[
         'libs/iostreams/src/file_descriptor.cpp',
         'libs/iostreams/src/mapped_file.cpp',
@@ -71,36 +73,38 @@ env.Library(
         LIBDEPS=[
             '$BUILD_DIR/mongo/util/boost_assert_shim',
             'boost_system',
-        ])
+        ],
+        UNITY_BUILD=False)
 
-boost_thread_source = dict( 
+boost_thread_source = dict(
     posix=[
-        'libs/thread/src/pthread/once.cpp', 
+        'libs/thread/src/pthread/once.cpp',
         'libs/thread/src/pthread/thread.cpp'
-    ], 
+    ],
     windows=[
-        'libs/thread/src/win32/thread.cpp', 
+        'libs/thread/src/win32/thread.cpp',
         'libs/thread/src/win32/thread_primitives.cpp',
         'libs/thread/src/win32/tss_dll.cpp',
         'libs/thread/src/win32/tss_pe.cpp',
-    ] 
+    ]
 ).get(env['TARGET_OS_FAMILY'], 'UNKNOWN_OS_FAMILY_FOR_BOOST_THREADS__%s' % env['TARGET_OS_FAMILY'])
 
-boost_thread_defines = dict( 
-    posix=['BOOST_THREAD_PTHREAD'], 
-    windows=['BOOST_THREAD_WIN32'] 
+boost_thread_defines = dict(
+    posix=['BOOST_THREAD_PTHREAD'],
+    windows=['BOOST_THREAD_WIN32']
 ).get(env['TARGET_OS_FAMILY'], 'UNKNOWN_OS_FAMILY_FOR_BOOST_THREADS__%s' % env['TARGET_OS_FAMILY'])
 
 threadlib_env = env.Clone()
 threadlib_env.Append(CPPDEFINES=['BOOST_THREAD_BUILD_LIB'] + boost_thread_defines)
 threadlib_env.Library(
-    target='boost_thread', 
+    target='boost_thread',
     source=[
         'libs/thread/src/future.cpp',
     ] + boost_thread_source,
     LIBDEPS=[
         '$BUILD_DIR/mongo/util/boost_assert_shim',
-    ]
+    ],
+    UNITY_BUILD=False
 )
 
 loglib_env = env.Clone()
@@ -113,7 +117,7 @@ loglib_env.AppendUnique(
         'BOOST_LOG_WITHOUT_SETTINGS_PARSERS',
     ])
 if env.ToolchainIs('msvc'):
-    # warning C4828: The file contains a character starting at offset 0x6009 that is illegal in 
+    # warning C4828: The file contains a character starting at offset 0x6009 that is illegal in
     # the current source character set (codepage 65001).
     loglib_env.AppendUnique(CCFLAGS=['/wd4828'])
 
@@ -124,7 +128,7 @@ if env.ToolchainIs('msvc'):
     ])
 
 loglib_env.Library(
-    target='boost_log', 
+    target='boost_log',
     source=[
         'libs/log/src/attribute_name.cpp',
         'libs/log/src/attribute_set.cpp',
@@ -163,5 +167,6 @@ loglib_env.Library(
         '$BUILD_DIR/mongo/util/boost_assert_shim',
         'boost_filesystem',
         'boost_thread',
-    ]
+    ],
+    UNITY_BUILD=False
 )

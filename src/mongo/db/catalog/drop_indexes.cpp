@@ -54,6 +54,7 @@ namespace {
 
 MONGO_FAIL_POINT_DEFINE(hangAfterAbortingIndexes);
 
+
 // Field name in dropIndexes command for indexes to drop.
 constexpr auto kIndexFieldName = "index"_sd;
 
@@ -285,7 +286,7 @@ Status dropReadyIndexes(OperationContext* opCtx,
     return Status::OK();
 }
 
-void assertMovePrimaryInProgress(OperationContext* opCtx, const NamespaceString& ns) {
+void assertMovePrimaryInProgressDropIndexes(OperationContext* opCtx, const NamespaceString& ns) {
     auto dss = DatabaseShardingState::get(opCtx, ns.db());
     auto dssLock = DatabaseShardingState::DSSLock::lockShared(opCtx, dss);
 
@@ -296,8 +297,9 @@ void assertMovePrimaryInProgress(OperationContext* opCtx, const NamespaceString&
             auto mpsm = dss->getMovePrimarySourceManager(dssLock);
 
             if (mpsm) {
-                LOGV2(
-                    4976500, "assertMovePrimaryInProgress", "movePrimaryNss"_attr = ns.toString());
+                LOGV2(4976500,
+                      "assertMovePrimaryInProgressDropIndexes",
+                      "movePrimaryNss"_attr = ns.toString());
 
                 uasserted(ErrorCodes::MovePrimaryInProgress,
                           "movePrimary is in progress for namespace " + ns.toString());
@@ -427,7 +429,7 @@ Status dropIndexes(OperationContext* opCtx,
         }
 
         if (!abortAgain) {
-            assertMovePrimaryInProgress(opCtx, nss);
+            assertMovePrimaryInProgressDropIndexes(opCtx, nss);
             break;
         }
     }

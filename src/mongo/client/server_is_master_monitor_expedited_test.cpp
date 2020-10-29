@@ -61,7 +61,6 @@ public:
     static inline const auto kLongRefreshPeriod = Milliseconds(10 * 1000);
     static inline const auto kDelta = Milliseconds(100);
     static inline const auto kOneMs = Milliseconds(1);
-    static inline const auto kZeroMs = Milliseconds(0);
 };
 
 TEST_F(SingleServerIsMasterMonitorExpeditedFixture, NoPreviousRequest) {

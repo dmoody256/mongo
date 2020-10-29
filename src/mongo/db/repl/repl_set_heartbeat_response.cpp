@@ -61,7 +61,7 @@ const std::string kAppliedWallTimeFieldName = "wallTime";
 const std::string kPrimaryIdFieldName = "primaryId";
 const std::string kReplSetFieldName = "set";
 const std::string kSyncSourceFieldName = "syncingTo";
-const std::string kTermFieldName = "term";
+const std::string kResponseTermFieldName = "term";
 const std::string kTimestampFieldName = "ts";
 const std::string kIsElectableFieldName = "electable";
 
@@ -90,7 +90,7 @@ void ReplSetHeartbeatResponse::addToBSON(BSONObjBuilder* builder) const {
         *builder << kSyncSourceFieldName << _syncingTo.toString();
     }
     if (_term != -1) {
-        builder->append(kTermFieldName, _term);
+        builder->append(kResponseTermFieldName, _term);
     }
     if (_primaryIdSet) {
         builder->append(kPrimaryIdFieldName, _primaryId);
@@ -147,7 +147,7 @@ Status ReplSetHeartbeatResponse::initialize(const BSONObj& doc, long long term) 
                                     << typeName(electionTimeElement.type()));
     }
 
-    Status termStatus = bsonExtractIntegerField(doc, kTermFieldName, &_term);
+    Status termStatus = bsonExtractIntegerField(doc, kResponseTermFieldName, &_term);
     if (!termStatus.isOK() && termStatus != ErrorCodes::NoSuchKey) {
         return termStatus;
     }

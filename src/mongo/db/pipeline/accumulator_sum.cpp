@@ -51,8 +51,8 @@ const char* AccumulatorSum::getOpName() const {
 }
 
 namespace {
-const char subTotalName[] = "subTotal";
-const char subTotalErrorName[] = "subTotalError";  // Used for extra precision.
+const char sumSubTotalName[] = "subTotal";
+const char sumSubTotalErrorName[] = "subTotalError";  // Used for extra precision.
 }  // namespace
 
 
@@ -61,8 +61,8 @@ void AccumulatorSum::processInternal(const Value& input, bool merging) {
         if (merging && input.getType() == Object) {
             // Process merge document, see getValue() below.
             nonDecimalTotal.addDouble(
-                input[subTotalName].getDouble());              // Sum without adjusting type.
-            processInternal(input[subTotalErrorName], false);  // Sum adjusting for type of error.
+                input[sumSubTotalName].getDouble());              // Sum without adjusting type.
+            processInternal(input[sumSubTotalErrorName], false);  // Sum adjusting for type of error.
         }
         return;
     }
@@ -111,7 +111,7 @@ Value AccumulatorSum::getValue(bool toBeMerged) {
                 double error;
                 std::tie(total, error) = nonDecimalTotal.getDoubleDouble();
                 long long llerror = static_cast<long long>(error);
-                return Value(DOC(subTotalName << total << subTotalErrorName << llerror));
+                return Value(DOC(sumSubTotalName << total << sumSubTotalErrorName << llerror));
             }
             // Sum doesn't fit a NumberLong, so return a NumberDouble instead.
             return Value(nonDecimalTotal.getDouble());

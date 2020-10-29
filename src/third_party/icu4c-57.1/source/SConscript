@@ -269,6 +269,7 @@ i18nEnv.Library(
     LIBDEPS=[
         'icu_common',
     ],
+    UNITY_BUILD=False
 )
 
 commonEnv = env.Clone()
@@ -463,9 +464,11 @@ commonEnv.Library(
         'common/uvectr64.cpp',
         'common/wintz.c',
     ],
+    PRECOMPILED_HEADER=False,
     LIBDEPS=[
         'icu_data',
     ],
+    UNITY_BUILD=False
 )
 
 env.Library(

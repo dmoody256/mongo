@@ -197,4 +197,5 @@ if not has_option('noshell') and usemozjs:
         AIB_COMPONENTS_EXTRA=[
             "tests",
         ],
+        UNITY_BUILD=False
     )

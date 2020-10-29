@@ -69,7 +69,7 @@ void uassertStatusOKWithWarning(const Status& status) {
     }
 }
 
-const WriteConcernOptions kMajorityWriteConcern(WriteConcernOptions::kMajority,
+const WriteConcernOptions kChunkMajorityWriteConcern(WriteConcernOptions::kMajority,
                                                 // Note: Even though we're setting UNSET here,
                                                 // kMajority implies JOURNAL if journaling is
                                                 // supported by mongod and
@@ -195,7 +195,7 @@ public:
             WriteConcernResult writeConcernResult;
             writeConcernResult.wTimedOut = false;
             Status majorityStatus = waitForWriteConcern(
-                opCtx, replClient.getLastOp(), kMajorityWriteConcern, &writeConcernResult);
+                opCtx, replClient.getLastOp(), kChunkMajorityWriteConcern, &writeConcernResult);
 
             if (!majorityStatus.isOK()) {
                 if (!writeConcernResult.wTimedOut) {

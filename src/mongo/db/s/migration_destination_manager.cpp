@@ -84,7 +84,7 @@ namespace {
 const auto getMigrationDestinationManager =
     ServiceContext::declareDecoration<MigrationDestinationManager>();
 
-const WriteConcernOptions kMajorityWriteConcern(WriteConcernOptions::kMajority,
+const WriteConcernOptions kMigrationDestMajorityWriteConcern(WriteConcernOptions::kMajority,
                                                 // Note: Even though we're setting UNSET here,
                                                 // kMajority implies JOURNAL if journaling is
                                                 // supported by mongod and
@@ -208,7 +208,7 @@ bool opReplicatedEnough(OperationContext* opCtx,
     writeConcernResult.wTimedOut = false;
 
     Status majorityStatus =
-        waitForWriteConcern(opCtx, lastOpApplied, kMajorityWriteConcern, &writeConcernResult);
+        waitForWriteConcern(opCtx, lastOpApplied, kMigrationDestMajorityWriteConcern, &writeConcernResult);
     if (!majorityStatus.isOK()) {
         if (!writeConcernResult.wTimedOut) {
             uassertStatusOK(majorityStatus);

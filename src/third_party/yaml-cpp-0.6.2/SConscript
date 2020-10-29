@@ -48,4 +48,5 @@ env.Library(
         "yaml-cpp/src/singledocparser.cpp",
         "yaml-cpp/src/stream.cpp",
         "yaml-cpp/src/tag.cpp",
-    ])
+    ],
+    UNITY_BUILD=False)

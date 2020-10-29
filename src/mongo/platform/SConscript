@@ -22,6 +22,7 @@ env.CppUnitTest(
         'decimal128_bson_test.cpp',
         'overflow_arithmetic_test.cpp'
     ],
+    UNITY_BUILD=False
 )
 
 env.Benchmark(

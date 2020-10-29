@@ -42,14 +42,14 @@ namespace repl {
 namespace {
 
 const std::string kCheckEmptyFieldName = "checkEmpty";
-const std::string kConfigVersionFieldName = "configVersion";
-const std::string kConfigTermFieldName = "configTerm";
-const std::string kHeartbeatVersionFieldName = "hbv";
+const std::string kArgsConfigVersionFieldName = "configVersion";
+const std::string kArgsConfigTermFieldName = "configTerm";
+const std::string kVersionFieldName = "hbv";
 const std::string kSenderHostFieldName = "from";
 const std::string kSenderIdFieldName = "fromId";
-const std::string kSetNameFieldName = "replSetHeartbeat";
-const std::string kTermFieldName = "term";
-const std::string kPrimaryIdFieldName = "primaryId";
+const std::string kArgsSetNameFieldName = "replSetHeartbeat";
+const std::string kArgsTermFieldName = "term";
+const std::string kArgsPrimaryIdFieldName = "primaryId";
 }  // namespace
 
 Status ReplSetHeartbeatArgsV1::initialize(const BSONObj& argsObj) {
@@ -58,22 +58,22 @@ Status ReplSetHeartbeatArgsV1::initialize(const BSONObj& argsObj) {
     if (!status.isOK())
         return status;
 
-    status = bsonExtractIntegerField(argsObj, kConfigVersionFieldName, &_configVersion);
+    status = bsonExtractIntegerField(argsObj, kArgsConfigVersionFieldName, &_configVersion);
     if (!status.isOK())
         return status;
 
     status = bsonExtractIntegerFieldWithDefault(
-        argsObj, kConfigTermFieldName, OpTime::kUninitializedTerm, &_configTerm);
+        argsObj, kArgsConfigTermFieldName, OpTime::kUninitializedTerm, &_configTerm);
     if (!status.isOK())
         return status;
 
     long long tempHeartbeatVersion;
-    status = bsonExtractIntegerField(argsObj, kHeartbeatVersionFieldName, &tempHeartbeatVersion);
+    status = bsonExtractIntegerField(argsObj, kVersionFieldName, &tempHeartbeatVersion);
     if (status.isOK()) {
         if (tempHeartbeatVersion != 1) {
             return Status(ErrorCodes::Error(40666),
                           str::stream()
-                              << "Found invalid value for field " << kHeartbeatVersionFieldName
+                              << "Found invalid value for field " << kVersionFieldName
                               << ": " << tempHeartbeatVersion);
         }
         _heartbeatVersion = tempHeartbeatVersion;
@@ -100,15 +100,15 @@ Status ReplSetHeartbeatArgsV1::initialize(const BSONObj& argsObj) {
     // If sender is in an older version, the request object may not have the 'primaryId' field, but
     // we still parse and allow it whenever it is present.
     status = bsonExtractIntegerFieldWithDefault(
-        argsObj, kPrimaryIdFieldName, kEmptyPrimaryId, &_primaryId);
+        argsObj, kArgsPrimaryIdFieldName, kEmptyPrimaryId, &_primaryId);
     if (!status.isOK())
         return status;
 
-    status = bsonExtractIntegerField(argsObj, kTermFieldName, &_term);
+    status = bsonExtractIntegerField(argsObj, kArgsTermFieldName, &_term);
     if (!status.isOK())
         return status;
 
-    status = bsonExtractStringField(argsObj, kSetNameFieldName, &_setName);
+    status = bsonExtractStringField(argsObj, kArgsSetNameFieldName, &_setName);
     if (!status.isOK())
         return status;
 
@@ -165,24 +165,24 @@ BSONObj ReplSetHeartbeatArgsV1::toBSON() const {
 }
 
 void ReplSetHeartbeatArgsV1::addToBSON(BSONObjBuilder* builder) const {
-    builder->append(kSetNameFieldName, _setName);
+    builder->append(kArgsSetNameFieldName, _setName);
     if (_checkEmpty) {
         builder->append(kCheckEmptyFieldName, _checkEmpty);
     }
-    builder->appendIntOrLL(kConfigVersionFieldName, _configVersion);
-    builder->appendIntOrLL(kConfigTermFieldName, _configTerm);
+    builder->appendIntOrLL(kArgsConfigVersionFieldName, _configVersion);
+    builder->appendIntOrLL(kArgsConfigTermFieldName, _configTerm);
     if (_hasHeartbeatVersion) {
-        builder->appendIntOrLL(kHeartbeatVersionFieldName, _hasHeartbeatVersion);
+        builder->appendIntOrLL(kVersionFieldName, _hasHeartbeatVersion);
     }
     builder->append(kSenderHostFieldName, _hasSender ? _senderHost.toString() : "");
     builder->appendIntOrLL(kSenderIdFieldName, _senderId);
-    builder->appendIntOrLL(kTermFieldName, _term);
+    builder->appendIntOrLL(kArgsTermFieldName, _term);
 
     // TODO SERVER-49382: Remove this FCV check when 5.0 becomes last-lts.
     if (serverGlobalParams.featureCompatibility.isVersionInitialized() &&
         serverGlobalParams.featureCompatibility.isGreaterThanOrEqualTo(
             ServerGlobalParams::FeatureCompatibility::Version::kVersion47)) {
-        builder->append(kPrimaryIdFieldName, _primaryId);
+        builder->append(kArgsPrimaryIdFieldName, _primaryId);
     }
 }
 

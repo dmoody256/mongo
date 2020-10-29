@@ -158,4 +158,5 @@ env.CppUnitTest(
         'expressions',
         'path',
     ],
+    UNITY_BUILD=False
 )

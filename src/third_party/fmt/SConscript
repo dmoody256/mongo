@@ -10,7 +10,9 @@ if env.ToolchainIs('GCC'):
 
 env.Library(
     target='fmt',
-    source=env.File([
-        'format.cc',
-        'posix.cc',
-    ], 'dist/src'))
+    source=[
+        'dist/src/format.cc',
+        'dist/src/posix.cc'
+    ],
+    UNITY_BUILD=False
+)

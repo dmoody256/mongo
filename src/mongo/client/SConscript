@@ -130,6 +130,7 @@ saslClientEnv.Library(
         '$BUILD_DIR/mongo/util/net/http_client',
     ],
     SYSLIBDEPS=saslLibs,
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -245,7 +246,7 @@ clientDriverEnv.Library(
         '$BUILD_DIR/mongo/db/commands/test_commands_enabled',
         '$BUILD_DIR/mongo/transport/message_compressor',
         '$BUILD_DIR/mongo/util/net/ssl_manager',
-    ]
+    ],
 )
 
 env.Library(
@@ -385,6 +386,7 @@ env.CppUnitTest(
         'remote_command_retry_scheduler',
         'replica_set_monitor_protocol_test_util',
     ],
+    UNITY_BUILD=False
 )
 
 env.CppIntegrationTest(

@@ -53,7 +53,6 @@ using executor::NetworkInterfaceThreadPool;
 using executor::TaskExecutor;
 using executor::ThreadPoolTaskExecutor;
 
-const Milliseconds kZeroMs = Milliseconds{0};
 
 /**
  * Given the TopologyVersion corresponding to a remote host, determines if exhaust is enabled.

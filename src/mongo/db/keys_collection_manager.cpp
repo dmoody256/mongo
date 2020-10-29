@@ -39,6 +39,7 @@
 #include "mongo/db/keys_collection_client.h"
 #include "mongo/db/logical_time.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/db/refresh_interval.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/vector_clock.h"
 #include "mongo/logv2/log.h"
@@ -54,7 +55,6 @@ const std::string KeysCollectionManager::kKeyManagerPurposeString = "HMAC";
 namespace {
 
 Milliseconds kDefaultRefreshWaitTime(30 * 1000);
-Milliseconds kRefreshIntervalIfErrored(200);
 Milliseconds kMaxRefreshWaitTime(10 * 60 * 1000);
 
 // Prevents the refresher thread from waiting longer than the given number of milliseconds, even on

@@ -9,7 +9,8 @@ env.Library(
     source=[
         "abseil-cpp/absl/hash/internal/city.cc",
         "abseil-cpp/absl/hash/internal/hash.cc",
-    ]
+    ],
+    UNITY_BUILD=False
 )
 
 env.Library(
@@ -29,5 +30,6 @@ env.Library(
         "abseil-cpp/absl/base/internal/throw_delegate.cc",
     ],
     LIBDEPS=[
-    ]
+    ],
+    UNITY_BUILD=False
 )

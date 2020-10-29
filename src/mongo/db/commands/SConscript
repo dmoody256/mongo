@@ -633,6 +633,7 @@ env.CppUnitTest(
         '$BUILD_DIR/mongo/db/storage/two_phase_index_build_knobs_idl',
         'map_reduce_agg',
     ],
+    UNITY_BUILD=False
 )
 
 env.CppUnitTest(

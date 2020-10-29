@@ -129,4 +129,5 @@ env.Library(
     # otherwise we would create a loop, since tcmalloc might use us. That should
     # be OK, unless libunwind had static initializers that invoked malloc.
     DISABLE_ALLOCATOR_SHIM_INJECTION=True,
+    UNITY_BUILD=False
 )

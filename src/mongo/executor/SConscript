@@ -295,6 +295,7 @@ env.CppUnitTest(
         'thread_pool_task_executor',
         'thread_pool_task_executor_test_fixture',
     ],
+    UNITY_BUILD=False
 )
 
 env.CppIntegrationTest(

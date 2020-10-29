@@ -186,8 +186,10 @@ sources.extend(Glob('platform/' + env["TARGET_ARCH"] + "/" + env["TARGET_OS"] + 
 env.Library(
     target="mozjs",
     source=sources,
+    PRECOMPILED_HEADER=False,
     LIBDEPS_TAGS=[
         # Depends on allocation symbols defined elsewhere
         'illegal_cyclic_or_unresolved_dependencies_whitelisted',
     ],
+    UNITY_BUILD=False
 )

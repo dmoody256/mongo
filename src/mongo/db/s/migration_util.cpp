@@ -103,7 +103,7 @@ const char kChunk[] = "chunk";
 const char kCollection[] = "collection";
 const auto kLogRetryAttemptThreshold = 20;
 
-const WriteConcernOptions kMajorityWriteConcern(WriteConcernOptions::kMajority,
+const WriteConcernOptions kUtilMajorityWriteConcern(WriteConcernOptions::kMajority,
                                                 WriteConcernOptions::SyncMode::UNSET,
                                                 WriteConcernOptions::kNoTimeout);
 

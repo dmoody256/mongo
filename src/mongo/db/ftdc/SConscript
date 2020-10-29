@@ -111,4 +111,5 @@ env.CppUnitTest(
         '$BUILD_DIR/mongo/util/clock_source_mock',
         'ftdc',
     ],
+    UNITY_BUILD=False
 )

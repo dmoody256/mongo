@@ -61,11 +61,11 @@ const char kRecoveryDocumentId[] = "minOpTimeRecovery";
 const char kMinOpTime[] = "minOpTime";
 const char kMinOpTimeUpdaters[] = "minOpTimeUpdaters";
 
-const WriteConcernOptions kMajorityWriteConcern(WriteConcernOptions::kMajority,
+const WriteConcernOptions kStateMajorityWriteConcern(WriteConcernOptions::kMajority,
                                                 WriteConcernOptions::SyncMode::UNSET,
                                                 WriteConcernOptions::kWriteConcernTimeoutSharding);
 
-const WriteConcernOptions kLocalWriteConcern(1,
+const WriteConcernOptions kStateLocalWriteConcern(1,
                                              WriteConcernOptions::SyncMode::UNSET,
                                              Milliseconds(0));
 
@@ -185,7 +185,7 @@ Status modifyRecoveryDocument(OperationContext* opCtx,
 
 Status ShardingStateRecovery::startMetadataOp(OperationContext* opCtx) {
     Status upsertStatus =
-        modifyRecoveryDocument(opCtx, RecoveryDocument::Increment, kMajorityWriteConcern);
+        modifyRecoveryDocument(opCtx, RecoveryDocument::Increment, kStateMajorityWriteConcern);
 
     if (upsertStatus == ErrorCodes::WriteConcernFailed) {
         // Couldn't wait for the replication to complete, but the local write was performed. Clear
@@ -277,7 +277,7 @@ Status ShardingStateRecovery::recover(OperationContext* opCtx) {
           "newConfigServerOpTime"_attr = grid->configOpTime());
 
     // Finally, clear the recovery document so next time we don't need to recover
-    status = modifyRecoveryDocument(opCtx, RecoveryDocument::Clear, kLocalWriteConcern);
+    status = modifyRecoveryDocument(opCtx, RecoveryDocument::Clear, kStateLocalWriteConcern);
     if (!status.isOK()) {
         LOGV2_WARNING(22089,
                       "Failed to reset sharding state recovery document due to {error}",

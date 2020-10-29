@@ -264,6 +264,7 @@ baseEnv.Library(
         'util/boost_assert_shim',
     ],
     AIB_COMPONENT='platform',
+    UNITY_BUILD=False
 )
 
 # Stage the top-level mongodb banners
