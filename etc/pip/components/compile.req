@@ -2,3 +2,4 @@
 Cheetah3 # src/mongo/base/generate_error_codes.py
 psutil
 regex
+networkx
