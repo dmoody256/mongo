@@ -573,6 +573,13 @@ class LibdepsGraphAnalysis:
 
         return self.results
 
+    def run_linters(self, linters):
+        """Run the various dependency reports."""
+
+        if LinterTypes.public_unused.name in linters:
+            self.results[LinterTypes.public_unused.name] = \
+                self.libdeps_graph.unused_public_linter()
+
 
 class GaPrinter:
     """Base class for printers of the graph analysis."""
