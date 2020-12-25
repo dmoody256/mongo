@@ -3525,7 +3525,7 @@ tasks:
 
           ${activate_virtualenv}
           GRAPH_FILE=$(find build -name "libdeps.graphml")
-          python buildscripts/libdeps/gacli.py --graph-file $GRAPH_FILE | gzip > results.txt.gz
+          python buildscripts/libdeps/gacli.py --graph-file $GRAPH_FILE > results.txt
           gzip $GRAPH_FILE
           mv $GRAPH_FILE.gz .
 
@@ -3533,12 +3533,12 @@ tasks:
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
-        local_file: src/results.txt.gz
-        remote_file: ${project}/${build_variant}/${revision}/sources/libdeps-${build_id}-results.txt.gz
+        local_file: src/results.txt
+        remote_file: ${project}/${build_variant}/${revision}/sources/libdeps-${build_id}-results.txt
         bucket: mciuploads
         permissions: public-read
-        content_type: ${content_type|application/gzip}
-        display_name: libdeps results tarball
+        content_type: text/plain
+        display_name: libdeps results
 
     - command: s3.put
       params:
@@ -10238,6 +10238,7 @@ buildvariants:
   tasks:
   - name: compile_test_and_package_serial_TG
   - name: compile_ninja_next_TG
+  - name: libdeps_graph_linting_TG
   - name: audit
   - name: auth_audit_gen
   - name: causally_consistent_jscore_txns_passthrough
