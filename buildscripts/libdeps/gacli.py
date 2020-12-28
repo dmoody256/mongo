@@ -146,11 +146,19 @@ def setup_args_parser():
         "Print nodes which depend on the first node of N nodes, but exclude all nodes listed there after."
     )
 
+    parser.add_argument('--path-depends', nargs='+', action='append', default=[],
+                        help="Print all depends paths between 2 nodes")
+
+    parser.add_argument(
+        '--critical-edges', nargs='+', action='append', default=[], help=
+        "Print edges between two nodes, which if removed would break the dependency between those nodes"
+    )
+
     return parser.parse_args()
 
 
 def load_graph_data(graph_file, output_format):
-    """Load a graphml file into a LibdepsGraph."""
+    """Load a graphml file."""
 
     if output_format == "pretty":
         sys.stdout.write("Loading graph data...")
@@ -178,6 +186,12 @@ def main():
 
     for depends in args.exclude_depends:
         analysis.append(libdeps.analyzer.ExcludeDependencies(libdeps_graph, depends))
+
+    for depends in args.path_depends:
+        analysis.append(libdeps.analyzer.PathDependencies(libdeps_graph, depends))
+
+    for depends in args.critical_edges:
+        analysis.append(libdeps.analyzer.CriticalEdges(libdeps_graph, depends))
 
     analysis += libdeps.analyzer.linter_factory(libdeps_graph, args.lint)
 

@@ -57,6 +57,8 @@ class DependsReportTypes(Enum):
     direct_depends = auto()
     common_depends = auto()
     exclude_depends = auto()
+    path_depends = auto()
+    critical_edges = auto()
 
 
 class LinterTypes(Enum):
@@ -64,6 +66,7 @@ class LinterTypes(Enum):
 
     all = auto()
     public_unused = auto()
+    heaviest_pub_dep = auto()
 
 
 class EdgeProps(Enum):

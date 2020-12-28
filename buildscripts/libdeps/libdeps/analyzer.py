@@ -31,6 +31,7 @@ represents the dependency information between all binaries from the build.
 
 import sys
 import textwrap
+import copy
 from pathlib import Path
 
 from libdeps.graph import CountTypes, DependsReportTypes, LinterTypes, EdgeProps, NodeProps
@@ -62,13 +63,14 @@ def schema_check(func, schema_version):
     """Check the version for a function against the graph."""
 
     def check(*args, **kwargs):
-        if schema_version <= args[0].graph.graph.get('graph_schema_version'):
+        # pylint: disable=protected-access
+        if schema_version <= args[0]._dependency_graph.graph.get('graph_schema_version'):
             return func(*args, **kwargs)
         else:
             sys.stderr.write(
                 f"WARNING: analysis for '{func.__name__}' requires graph schema version '{schema_version}'\n"
                 +
-                f"but detected graph schema version '{args[0].graph.graph.get('graph_schema_version')}'\n"
+                f"but detected graph schema version '{args[0]._dependency_graph.graph.get('graph_schema_version')}'\n"
                 + f"Not running analysis for  {func.__name__}\n\n")
             return "GRAPH_SCHEMA_VERSION_ERR"
 
@@ -81,18 +83,19 @@ class Analyzer:
     def __init__(self, graph):
         """Store the graph and extract the build_dir from the graph."""
 
-        self.graph = graph
-        self.build_dir = Path(graph.graph['build_dir'])
+        self._dependents_graph = graph
+        self._dependency_graph = graph.get_reverse_graph()
+        self._build_dir = Path(graph.graph['build_dir'])
 
     def _strip_build_dir(self, node):
         """Small util function for making args match the graph paths."""
 
         node = Path(node)
-        if str(node).startswith(str(self.build_dir)):
-            return str(node.relative_to(self.build_dir))
+        if str(node).startswith(str(self._build_dir)):
+            return str(node.relative_to(self._build_dir))
         else:
             raise Exception(
-                f"build path not in node path: node: {node} build_dir: {self.build_dir}")
+                f"build path not in node path: node: {node} build_dir: {self._build_dir}")
 
     def _strip_build_dirs(self, nodes):
         """Small util function for making a list of nodes match graph paths."""
@@ -106,19 +109,23 @@ class Counter(Analyzer):
     def number_of_edge_types(self, edge_type, value):
         """Count the graphs edges based on type."""
 
-        return len(
-            [edge for edge in self.graph.edges(data=True) if edge[2].get(edge_type) == value])
+        return len([
+            edge for edge in self._dependents_graph.edges(data=True)
+            if edge[2].get(edge_type) == value
+        ])
 
     def node_type_count(self, node_type, value):
         """Count the graphs nodes based on type."""
 
-        return len(
-            [node for node in self.graph.nodes(data=True) if node[1].get(node_type) == value])
+        return len([
+            node for node in self._dependents_graph.nodes(data=True)
+            if node[1].get(node_type) == value
+        ])
 
     def report(self, report):
         """Report the results for the current type."""
 
-        report[self.count_type] = self.run()
+        report[self._count_type] = self.run()
 
 
 class NodeCounter(Counter):
@@ -128,13 +135,13 @@ class NodeCounter(Counter):
         """Store graph and set type."""
 
         super().__init__(graph)
-        self.count_type = CountTypes.node.name
+        self._count_type = CountTypes.node.name
 
     @schema_check(schema_version=1)
     def run(self):
         """Count the graphs nodes."""
 
-        return self.graph.number_of_nodes()
+        return self._dependents_graph.number_of_nodes()
 
 
 class EdgeCounter(Counter):
@@ -144,13 +151,13 @@ class EdgeCounter(Counter):
         """Store graph and set type."""
 
         super().__init__(graph)
-        self.count_type = CountTypes.edge.name
+        self._count_type = CountTypes.edge.name
 
     @schema_check(schema_version=1)
     def run(self):
         """Count the graphs edges."""
 
-        return self.graph.number_of_edges()
+        return self._dependents_graph.number_of_edges()
 
 
 class DirectEdgeCounter(Counter):
@@ -160,7 +167,7 @@ class DirectEdgeCounter(Counter):
         """Store graph and set type."""
 
         super().__init__(graph)
-        self.count_type = CountTypes.dir_edge.name
+        self._count_type = CountTypes.dir_edge.name
 
     @schema_check(schema_version=1)
     def run(self):
@@ -176,7 +183,7 @@ class TransEdgeCounter(Counter):
         """Store graph and set type."""
 
         super().__init__(graph)
-        self.count_type = CountTypes.trans_edge.name
+        self._count_type = CountTypes.trans_edge.name
 
     @schema_check(schema_version=1)
     def run(self):
@@ -192,14 +199,15 @@ class DirectPubEdgeCounter(Counter):
         """Store graph and set type."""
 
         super().__init__(graph)
-        self.count_type = CountTypes.dir_pub_edge.name
+        self._count_type = CountTypes.dir_pub_edge.name
 
     @schema_check(schema_version=1)
     def run(self):
         """Count the graphs direct public edges."""
 
         return len([
-            edge for edge in self.graph.edges(data=True) if edge[2].get(EdgeProps.direct.name)
+            edge for edge in self._dependents_graph.edges(data=True)
+            if edge[2].get(EdgeProps.direct.name)
             and edge[2].get(EdgeProps.visibility.name) == int(deptype.Public)
         ])
 
@@ -211,7 +219,7 @@ class PublicEdgeCounter(Counter):
         """Store graph and set type."""
 
         super().__init__(graph)
-        self.count_type = CountTypes.pub_edge.name
+        self._count_type = CountTypes.pub_edge.name
 
     @schema_check(schema_version=1)
     def run(self):
@@ -227,7 +235,7 @@ class PrivateEdgeCounter(Counter):
         """Store graph and set type."""
 
         super().__init__(graph)
-        self.count_type = CountTypes.priv_edge.name
+        self._count_type = CountTypes.priv_edge.name
 
     @schema_check(schema_version=1)
     def run(self):
@@ -243,7 +251,7 @@ class InterfaceEdgeCounter(Counter):
         """Store graph and set type."""
 
         super().__init__(graph)
-        self.count_type = CountTypes.if_edge.name
+        self._count_type = CountTypes.if_edge.name
 
     @schema_check(schema_version=1)
     def run(self):
@@ -259,7 +267,7 @@ class ShimCounter(Counter):
         """Store graph and set type."""
 
         super().__init__(graph)
-        self.count_type = CountTypes.shim.name
+        self._count_type = CountTypes.shim.name
 
     @schema_check(schema_version=1)
     def run(self):
@@ -275,7 +283,7 @@ class LibCounter(Counter):
         """Store graph and set type."""
 
         super().__init__(graph)
-        self.count_type = CountTypes.lib.name
+        self._count_type = CountTypes.lib.name
 
     @schema_check(schema_version=1)
     def run(self):
@@ -291,7 +299,7 @@ class ProgCounter(Counter):
         """Store graph and set type."""
 
         super().__init__(graph)
-        self.count_type = CountTypes.prog.name
+        self._count_type = CountTypes.prog.name
 
     @schema_check(schema_version=1)
     def run(self):
@@ -337,13 +345,13 @@ class CommonDependencies(Analyzer):
         """Store graph and strip the nodes."""
 
         super().__init__(graph)
-        self.nodes = self._strip_build_dirs(nodes)
+        self._nodes = self._strip_build_dirs(nodes)
 
     @schema_check(schema_version=1)
     def run(self):
         """For a given set of nodes, report what nodes depend on all nodes from that set."""
 
-        neighbor_sets = [set(self.graph[node]) for node in self.nodes]
+        neighbor_sets = [set(self._dependents_graph[node]) for node in self._nodes]
         return list(set.intersection(*neighbor_sets))
 
     def report(self, report):
@@ -351,7 +359,7 @@ class CommonDependencies(Analyzer):
 
         if DependsReportTypes.common_depends.name not in report:
             report[DependsReportTypes.common_depends.name] = {}
-        report[DependsReportTypes.common_depends.name][tuple(self.nodes)] = self.run()
+        report[DependsReportTypes.common_depends.name][tuple(self._nodes)] = self.run()
 
 
 class DirectDependencies(Analyzer):
@@ -361,15 +369,15 @@ class DirectDependencies(Analyzer):
         """Store graph and strip the node."""
 
         super().__init__(graph)
-        self.node = self._strip_build_dir(node)
+        self._node = self._strip_build_dir(node)
 
     @schema_check(schema_version=1)
     def run(self):
         """For given nodes, report what nodes depend directly on that node."""
 
         return [
-            depender for depender in self.graph[self.node]
-            if self.graph[self.node][depender].get(EdgeProps.direct.name)
+            depender for depender in self._dependents_graph[self._node]
+            if self._dependents_graph[self._node][depender].get(EdgeProps.direct.name)
         ]
 
     def report(self, report):
@@ -377,7 +385,7 @@ class DirectDependencies(Analyzer):
 
         if DependsReportTypes.direct_depends.name not in report:
             report[DependsReportTypes.direct_depends.name] = {}
-        report[DependsReportTypes.direct_depends.name][self.node] = self.run()
+        report[DependsReportTypes.direct_depends.name][self._node] = self.run()
 
 
 class ExcludeDependencies(Analyzer):
@@ -387,7 +395,7 @@ class ExcludeDependencies(Analyzer):
         """Store graph and strip the nodes."""
 
         super().__init__(graph)
-        self.nodes = self._strip_build_dirs(nodes)
+        self._nodes = self._strip_build_dirs(nodes)
 
     @schema_check(schema_version=1)
     def run(self):
@@ -398,10 +406,11 @@ class ExcludeDependencies(Analyzer):
         """
 
         valid_depender_nodes = []
-        for depender_node in set(self.graph[self.nodes[0]]):
-            if all(
-                    bool(excludes_node not in set(self.graph.rgraph[depender_node]))
-                    for excludes_node in self.nodes[1:]):
+        for depender_node in set(self._dependents_graph[self._nodes[0]]):
+            if all([
+                    bool(excludes_node not in set(self._dependency_graph[depender_node]))
+                    for excludes_node in self._nodes[1:]
+            ]):
                 valid_depender_nodes.append(depender_node)
         return valid_depender_nodes
 
@@ -410,7 +419,179 @@ class ExcludeDependencies(Analyzer):
 
         if DependsReportTypes.exclude_depends.name not in report:
             report[DependsReportTypes.exclude_depends.name] = {}
-        report[DependsReportTypes.exclude_depends.name][tuple(self.nodes)] = self.run()
+        report[DependsReportTypes.exclude_depends.name][tuple(self._nodes)] = self.run()
+
+
+class PathDependencies(Analyzer):
+    """Finds all paths between two nodes in the graph."""
+
+    def __init__(self, graph, nodes):
+        """Store graph and strip the nodes."""
+
+        super().__init__(graph)
+        self._start_node, self._end_node = self._strip_build_dirs(nodes)
+
+    def _recursive_direct_public_libdeps(self, current_node, current_path):
+        """Check each direct public libdep on the current node and recurse to find other paths."""
+
+        paths = []
+
+        # Get the direct public libdeps on the current node so we can check if the start node is
+        # in them. If it is then we will copy the current path so we have a new reference we can
+        # safe off and prevent modification as we go further down the tree. All direct public
+        # nodes are added as a branch and traversal is continued to keep search for the
+        # start node.
+        for dir_pub_node in self._dependency_graph[current_node]:
+            if (self._dependency_graph[current_node][dir_pub_node].get(EdgeProps.direct.name)
+                    and self._dependency_graph[current_node][dir_pub_node].get(
+                        EdgeProps.visibility.name) == int(deptype.Public)):
+
+                local_path = copy.copy(current_path)
+                local_path.append(dir_pub_node)
+                if dir_pub_node == self._start_node:
+                    paths.append(list(reversed(local_path)))
+
+                if self._start_node in self._dependency_graph[dir_pub_node]:
+                    paths += self._recursive_direct_public_libdeps(dir_pub_node, local_path)
+        return paths
+
+    @schema_check(schema_version=1)
+    def run(self):
+        """Find all paths between the two nodes in the graph."""
+
+        paths = []
+
+        # This for loop checks the dependency nodes directly on the end node
+        # and adds that as a path. Probably could break, but don't want to silent cases
+        # where the node is listed twice as a dependency
+        for node in self._dependency_graph[self._end_node]:
+            if self._start_node == node:
+                paths.append([self._start_node, self._end_node])
+
+        # Now we need to walk the direct public tree backwards, recording the nodes we
+        # took as we go, so we can see if the start node is in that tree and
+        # then construct the path taken between the two.
+        current_path = [self._end_node]
+        paths += self._recursive_direct_public_libdeps(self._end_node, current_path)
+
+        return paths
+
+    def report(self, report):
+        """Add the path list to the report."""
+
+        if DependsReportTypes.path_depends.name not in report:
+            report[DependsReportTypes.path_depends.name] = {}
+        report[DependsReportTypes.path_depends.name][tuple(
+            [self._start_node, self._end_node])] = [f"{' -> '.join(path)}" for path in self.run()]
+
+
+class CriticalEdges(PathDependencies):
+    """Finds all edges between two nodes, where remove that edge breaks the dependency."""
+
+    @schema_check(schema_version=1)
+    def run(self):
+        """Go through the list of paths for the two nodes finding the edges that exist in every path."""
+
+        critical_edge_counts = {}
+
+        # We can get all paths through the graph with the other analyzer, and then we can check
+        # to see if any given edge exists in every path by using a counter to record the number of
+        # times it appears, and compare that to the number of paths, this assumes no cycles. If
+        # that given edge exists in every path, then it is critical and
+        # and removing that edge would disrupt all paths through the graph.
+        paths = super().run()
+        for nodes in paths:
+            for from_node, to_node in zip(nodes[:-1], nodes[1:]):
+                nodes_tuple = tuple([from_node, to_node])
+                if nodes_tuple not in critical_edge_counts:
+                    critical_edge_counts[nodes_tuple] = 1
+                else:
+                    critical_edge_counts[nodes_tuple] += 1
+
+        critical_edges = []
+        for nodes, count in critical_edge_counts.items():
+            if count == len(paths):
+                critical_edges.append(nodes)
+
+        return critical_edges
+
+    def report(self, report):
+        """Add the critical edges to report."""
+
+        if DependsReportTypes.critical_edges.name not in report:
+            report[DependsReportTypes.critical_edges.name] = {}
+        report[DependsReportTypes.critical_edges.name][tuple([self._start_node,
+                                                              self._end_node])] = self.run()
+
+
+class HeaviestPublicLinter(Analyzer):
+    """Lints the graph for the heaviest edges, or edge with the most resulting transitive edges."""
+
+    def _count_edge(self, edge, checked_edges, count):
+        """Determine if a given edge should be counted."""
+
+        if edge not in checked_edges:
+            checked_edges.add(edge)
+            original_node = edge[0]
+            depender = edge[1]
+            try:
+                edge_attribs = self._dependents_graph[original_node][depender]
+
+                if (not edge_attribs.get(EdgeProps.direct.name) and
+                    (edge_attribs.get(EdgeProps.visibility.name) == int(deptype.Public)
+                     or edge_attribs.get(EdgeProps.visibility.name) == int(deptype.Interface))):
+                    count += [edge]
+            except KeyError:
+                pass
+
+    def _count_transitive_tree(self, node, original_nodes, checked_edges, count):
+        """Recurse the resulting transitive tree counting nodes."""
+
+        for depender in self._dependents_graph[node]:
+            for original_node in original_nodes:
+                edge = (original_node, depender)
+                self._count_edge(edge, checked_edges, count)
+
+    def _get_trans_nodes(self, edge, trans_pub_nodes):
+        """Get all the nodes that the target edge will transitively induce."""
+
+        for trans_node in self._dependency_graph[edge[0]]:
+            if (self._dependency_graph[edge[0]][trans_node].get(EdgeProps.visibility.name) == int(
+                    deptype.Public) or self._dependency_graph[edge[0]][trans_node].get(
+                        EdgeProps.visibility.name) == int(deptype.Interface)):
+                trans_pub_nodes.add(trans_node)
+
+    @schema_check(schema_version=1)
+    def run(self):
+        """Run the linter counting the weights of all direct public edges."""
+
+        edges = []
+        checked_edges = set()
+
+        # We will check every direct public edge in the graph as those are what generate transitive
+        # edges. For each direct public edge, we need to get all depedendenies induced by it, and
+        # then count all the transitive edges created by those induced edges along with edges created
+        # by the original direct public node.
+        for edge in self._dependents_graph.edges:
+            edge_attribs = self._dependents_graph[edge[0]][edge[1]]
+
+            if (edge_attribs.get(EdgeProps.direct.name)
+                    and edge_attribs.get(EdgeProps.visibility.name) == int(deptype.Public)):
+
+                # Here we are getting all the nodes to check from induced edges.
+                trans_pub_nodes = set([edge[0]])
+                self._get_trans_nodes(edge, trans_pub_nodes)
+
+                count = []
+                self._count_transitive_tree(edge[1], list(trans_pub_nodes), checked_edges, count)
+                edges.append((len(count), edge))
+
+        return list(reversed(sorted(edges)))
+
+    def report(self, report):
+        """Report the lint issies."""
+
+        report[LinterTypes.heaviest_pub_dep.name] = self.run()
 
 
 class UnusedPublicLinter(Analyzer):
@@ -424,7 +605,7 @@ class UnusedPublicLinter(Analyzer):
             original_node = edge[0]
             depender = edge[1]
             try:
-                edge_attribs = self.graph[original_node][depender]
+                edge_attribs = self._dependents_graph[original_node][depender]
 
                 if (edge_attribs.get(EdgeProps.visibility.name) == int(deptype.Public)
                         or edge_attribs.get(EdgeProps.visibility.name) == int(deptype.Interface)):
@@ -445,7 +626,7 @@ class UnusedPublicLinter(Analyzer):
         in that tree do not have symbol dependencies.
         """
 
-        for depender in self.graph[node]:
+        for depender in self._dependents_graph[node]:
             for original_node in original_nodes:
                 edge = (original_node, depender)
                 if not self._check_edge_no_symbols(edge, original_nodes, checked_edges):
@@ -455,13 +636,13 @@ class UnusedPublicLinter(Analyzer):
     def _check_trans_nodes_no_symbols(self, edge, trans_pub_nodes):
         """Check the edge against the transitive nodes for symbols."""
 
-        for trans_node in self.graph.rgraph[edge[0]]:
-            if (self.graph.rgraph[edge[0]][trans_node].get(EdgeProps.visibility.name) == int(
-                    deptype.Public) or self.graph.rgraph[edge[0]][trans_node].get(
+        for trans_node in self._dependency_graph[edge[0]]:
+            if (self._dependency_graph[edge[0]][trans_node].get(EdgeProps.visibility.name) == int(
+                    deptype.Public) or self._dependency_graph[edge[0]][trans_node].get(
                         EdgeProps.visibility.name) == int(deptype.Interface)):
                 trans_pub_nodes.add(trans_node)
                 try:
-                    if self.graph[trans_node][edge[1]].get(EdgeProps.symbols.name):
+                    if self._dependents_graph[trans_node][edge[1]].get(EdgeProps.symbols.name):
                         return True
                 except KeyError:
                     pass
@@ -478,13 +659,15 @@ class UnusedPublicLinter(Analyzer):
         unused_public_libdeps = []
         checked_edges = set()
 
-        for edge in self.graph.edges:
-            edge_attribs = self.graph[edge[0]][edge[1]]
+        for edge in self._dependents_graph.edges:
+            edge_attribs = self._dependents_graph[edge[0]][edge[1]]
 
             if (edge_attribs.get(EdgeProps.direct.name)
                     and edge_attribs.get(EdgeProps.visibility.name) == int(deptype.Public)
-                    and not self.graph.nodes()[edge[0]].get(NodeProps.shim.name) and
-                    self.graph.nodes()[edge[1]].get(NodeProps.bin_type.name) == 'SharedLibrary'):
+                    and not self._dependents_graph.nodes()[edge[0]].get(NodeProps.shim.name)
+                    and self._dependents_graph.nodes()[edge[1]].get(
+                        NodeProps.bin_type.name) == 'SharedLibrary'):
+
                 # First we will get all the transitive libdeps the dependent node
                 # induces, while we are getting those we also check if the depender
                 # node has any symbol dependencies to that transitive libdep.
@@ -512,6 +695,7 @@ def linter_factory(graph, linters):
 
     linter_map = {
         LinterTypes.public_unused.name: UnusedPublicLinter,
+        LinterTypes.heaviest_pub_dep.name: HeaviestPublicLinter,
     }
 
     if not isinstance(linters, list):
@@ -534,9 +718,9 @@ class BuildDataReport(Analyzer):
     def report(self, report):
         """Add the build data from the graph to the report."""
 
-        report['invocation'] = self.graph.graph.get('invocation')
-        report['git_hash'] = self.graph.graph.get('git_hash')
-        report['graph_schema_version'] = self.graph.graph.get('graph_schema_version')
+        report['invocation'] = self._dependents_graph.graph.get('invocation')
+        report['git_hash'] = self._dependents_graph.graph.get('git_hash')
+        report['graph_schema_version'] = self._dependents_graph.graph.get('graph_schema_version')
 
 
 class LibdepsGraphAnalysis:
@@ -545,16 +729,16 @@ class LibdepsGraphAnalysis:
     def __init__(self, libdeps_graph, analysis):
         """Perform analysis based off input args."""
 
-        self.libdeps_graph = libdeps_graph
+        self._libdeps_graph = libdeps_graph
 
-        self.results = {}
+        self._results = {}
         for analyzer in analysis:
-            analyzer.report(self.results)
+            analyzer.report(self._results)
 
     def get_results(self):
         """Return the results fo the analysis."""
 
-        return self.results
+        return self._results
 
     def run_linters(self, linters):
         """Run the various dependency reports."""
@@ -570,7 +754,7 @@ class GaPrinter:
     def __init__(self, libdeps_graph_analysis):
         """Store the graph analysis for use when printing."""
 
-        self.libdeps_graph_analysis = libdeps_graph_analysis
+        self._libdeps_graph_analysis = libdeps_graph_analysis
 
 
 class GaJsonPrinter(GaPrinter):
@@ -597,7 +781,7 @@ class GaJsonPrinter(GaPrinter):
 class GaPrettyPrinter(GaPrinter):
     """Printer for pretty console output."""
 
-    count_descs = {
+    _count_descs = {
         CountTypes.node.name: "Nodes in Graph: {}",
         CountTypes.edge.name: "Edges in Graph: {}",
         CountTypes.dir_edge.name: "Direct Edges in Graph: {}",
@@ -620,26 +804,8 @@ class GaPrettyPrinter(GaPrinter):
             print(f"    {i}: {depender}")
         print("")
 
-    def print(self):
-        """Print the result data."""
-        results = self.libdeps_graph_analysis.get_results()
-
-        if 'invocation' in results:
-            print(
-                textwrap.dedent(f"""\
-                    Graph built from git hash:
-                    {results['git_hash']}
-
-                    Graph Schema version:
-                    {results['graph_schema_version']}
-
-                    Build invocation:
-                    {results['invocation']}
-                    """))
-
-        for count_type in CountTypes.__members__.items():
-            if count_type[0] in self.count_descs and count_type[0] in results:
-                print(self.count_descs[count_type[0]].format(results[count_type[0]]))
+    def _print_depends_reports(self, results):
+        """Print the depends reports result data."""
 
         if DependsReportTypes.direct_depends.name in results:
             print("\nNodes that directly depend on:")
@@ -661,6 +827,42 @@ class GaPrettyPrinter(GaPrinter):
                     f"=>depends: {nodes[0]}, exclude: {nodes[1:]}:",
                     results[DependsReportTypes.exclude_depends.name][nodes])
 
+        if DependsReportTypes.path_depends.name in results:
+            print("\nDependency graph paths:")
+            for nodes in results[DependsReportTypes.path_depends.name]:
+                self._print_results_node_list(f"=>start node: {nodes[0]}, end node: {nodes[1]}:",
+                                              results[DependsReportTypes.path_depends.name][nodes])
+
+        if DependsReportTypes.critical_edges.name in results:
+            print("\nCritical Edges:")
+            for nodes in results[DependsReportTypes.critical_edges.name]:
+                self._print_results_node_list(
+                    f"=>critical edges between {nodes[0]} and {nodes[1]}:",
+                    results[DependsReportTypes.critical_edges.name][nodes])
+
+    def print(self):
+        """Print the result data."""
+        results = self._libdeps_graph_analysis.get_results()
+
+        if 'invocation' in results:
+            print(
+                textwrap.dedent(f"""\
+                    Graph built from git hash:
+                    {results['git_hash']}
+
+                    Graph Schema version:
+                    {results['graph_schema_version']}
+
+                    Build invocation:
+                    {results['invocation']}
+                    """))
+
+        for count_type in CountTypes.__members__.items():
+            if count_type[0] in self._count_descs and count_type[0] in results:
+                print(self._count_descs[count_type[0]].format(results[count_type[0]]))
+
+        self._print_depends_reports(results)
+
         if LinterTypes.public_unused.name in results:
             print(
                 f"\nLibdepsLinter: PUBLIC libdeps that could be PRIVATE: {len(results[LinterTypes.public_unused.name])}"
@@ -668,3 +870,11 @@ class GaPrettyPrinter(GaPrinter):
             for issue in sorted(results[LinterTypes.public_unused.name],
                                 key=lambda item: item[1] + item[0]):
                 print(f"    {issue[1]}: PUBLIC -> {issue[0]} -> PRIVATE")
+
+        if LinterTypes.heaviest_pub_dep.name in results:
+            top_n = 30
+            print(f"\nLibdepsLinter: Edges created from direct public links (top {top_n}):")
+            for weight in results[LinterTypes.heaviest_pub_dep.name][:top_n]:
+                print(f"    {weight[0]}: [{weight[1][1]}] has direct public link [{weight[1][0]}]")
+            print(f"    |: ...")
+            print(f"    V: {len(results[LinterTypes.heaviest_pub_dep.name])-top_n} others")
