@@ -112,7 +112,7 @@ const DrawGraph = ({size, graphData, nodes, loading, findNode, setFindNode}) => 
         {activeComponent}
       </Button>
       <TextField size='small' label='Find Node' onChange={event => {
-          handleFindNode(event.target.value);
+          handleFindNode(event.target.value, graphData, activeComponent, forceRef);
         }}
       />
       <SwitchComponents active={activeComponent}>

@@ -14,15 +14,19 @@
     "eject": "react-scripts eject"
   },
   "dependencies": {
-    "@material-ui/core": "^4.11.0",
-    "@material-ui/data-grid": "^4.0.0-alpha.12",
-    "@material-ui/icons": "^4.9.1",
-    "@material-ui/lab": "next",
+    "@material-ui/core": "^5.0.0-alpha.1",
+    "@material-ui/icons": "^5.0.0-alpha.1",
+    "@material-ui/lab": "^5.0.0-alpha.1",
+    "@emotion/react": "^11.1.4",
+    "@emotion/styled": "^11.0.0",
     "date-fns": "^2.16.1",
     "dayjs": "^1.9.7",
+    "http-server": "^0.12.3",
     "luxon": "^1.25.0",
     "moment": "^2.29.1",
     "p-limit": "^3.0.2",
+    "react": "^16.8",
+    "react-dom": "^16.0.0",
     "react-force-graph-2d": "^1.18.1",
     "react-force-graph-3d": "^1.18.8",
     "react-indiana-drag-scroll": "^1.8.0",
@@ -32,25 +36,9 @@
     "react-virtualized": "^9.22.2",
     "react-window": "^1.8.6",
     "redux": "^4.0.5",
-    "serve": "^11.3.2",
-    "socket.io-client": "latest"
-  },
-  "devDependencies": {
-    "@types/react": "^16.14.1",
-    "bufferutil": "^4.0.2",
-    "canvas": "^2.6.1",
-    "fibers": "^5.0.0",
-    "node-sass": "^4.14.1",
-    "react": "^16.14.0",
-    "react-dom": "^16.14.0",
-    "sass": "^1.29.0",
-    "ts-node": "^9.0.0",
-    "type-fest": "^0.13.1",
-    "typescript": "^3.9.7",
-    "utf-8-validate": "^5.0.3",
-    "webpack": "^4.44.2",
-    "webpack-hot-middleware": "^2.25.0",
-    "webpack-plugin-serve": "^1.2.0"
+    "socket.io-client": "latest",
+    "canvas": "^2.5.0",
+    "typescript": "^3.9.7"
   },
   "browserslist": {
     "production": [

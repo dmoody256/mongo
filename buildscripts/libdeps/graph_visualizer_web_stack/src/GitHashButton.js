@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const GitHashButton = ({loading, graphFiles, setLoading, text, file}) => {
+const GitHashButton = ({loading, graphFiles, setLoading, text}) => {
 
   const [selected, setSelected] = React.useState(false);
   const [selfLoading, setSelfLoading] = React.useState(false);
@@ -43,7 +43,7 @@ const GitHashButton = ({loading, graphFiles, setLoading, text, file}) => {
   function handleClick() {
     setSelfLoading(true);
     setLoading(true);
-    socket.emit("git_hash_selected", {'hash':text, 'file': file, 'selected':true});
+    socket.emit("git_hash_selected", {'hash':text, 'selected':true});
   }
 
   React.useEffect(() => {

@@ -63,7 +63,9 @@ export const getGraphFiles = (state) => {
 };
 
 export const getNodeInfos = (state) => {
-  return {nodeInfos: state.nodeInfo};
+  return {
+    nodeInfos: state.nodeInfo
+  };
 };
 
 export const getCounts = (state) => {

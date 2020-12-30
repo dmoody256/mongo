@@ -33,6 +33,7 @@ web service if not debug.
 """
 
 import os
+from pathlib import Path
 import argparse
 import shutil
 import subprocess
@@ -42,7 +43,7 @@ import copy
 import textwrap
 
 import flask
-from graph_visualizer_web_stack.flask.flask_backend import create_app
+from graph_visualizer_web_stack.flask.flask_backend import BackendServer
 
 
 def get_args():
@@ -58,17 +59,30 @@ def get_args():
         '--graphml-dir', type=str, action='store', help=
         "Directory where libdeps graphml files live. The UI will allow selecting different graphs from this location",
         default="build/opt")
-    parser.add_argument('--frontend_url', type=str, action='store',
-                        help="URL to the frontend for CORS configuration.",
-                        default="http://localhost:3000")
+
+    parser.add_argument('--frontend-host', type=str, action='store',
+                        help="Hostname where the front end will run.", default="localhost")
+
+    parser.add_argument('--backend-host', type=str, action='store',
+                        help="Hostname where the back end will run.", default="localhost")
+
+    parser.add_argument('--frontend-port', type=str, action='store',
+                        help="Port where the front end will run.", default="3000")
+
+    parser.add_argument('--backend-port', type=str, action='store',
+                        help="Port where the back end will run.", default="5000")
+
+    parser.add_argument('--launch', choices=['frontend', 'backend', 'both'], default='both',
+                        help="Specifies which part of the web service to launch.")
 
     return parser.parse_args()
 
 
-def execute_and_read_stdout(cmd, cwd):
+def execute_and_read_stdout(cmd, cwd, env):
     """Execute passed command and get realtime output."""
 
-    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, cwd=cwd, universal_newlines=True)
+    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, cwd=str(cwd), env=env,
+                             universal_newlines=True)
     for stdout_line in iter(popen.stdout.readline, ""):
         yield stdout_line
     popen.stdout.close()
@@ -77,81 +91,104 @@ def execute_and_read_stdout(cmd, cwd):
         raise subprocess.CalledProcessError(return_code, cmd)
 
 
-def front_end_output(npm_start, cwd):
-    """Start the frontend."""
-
-    for output in execute_and_read_stdout(npm_start, cwd=cwd):
-        print(output, end="")
-
-
-def setup_node(node_check, npm_install, cwd):
+def check_node(node_check, cwd):
     """Check node version and install npm packages."""
 
     status, output = subprocess.getstatusoutput(node_check)
     if status != 0 or not output.split('\n')[-1].startswith('v12'):
         print(
-            f"Failed with status {status} to get node version 12 from 'node -v':\noutput: '{output}'"
-        )
+            textwrap.dedent(f"""\
+            Failed to get node version 12 from 'node -v':
+            output: '{output}'
+            Perhaps run 'source {cwd}/setup_node_env.sh install'"""))
         exit(1)
 
-    node_modules = os.path.join(
-        os.path.dirname(__file__), 'graph_visualizer_web_stack', 'node_modules')
-    if not os.path.exists(node_modules):
+    node_modules = cwd / 'node_modules'
 
-        print(f"{node_modules} not found, need to run 'npm install'")
-        for output in execute_and_read_stdout(npm_install, cwd=cwd):
-            print(output, end="")
+    if not node_modules.exists():
+        print(f"{node_modules} not found, you need to run 'npm install' in {cwd}")
 
 
-def start_debug(app, socketio, npm_start, cwd):
+def start_backend(web_service_info, debug):
     """Start the backend in debug mode."""
 
-    thread = threading.Thread(target=front_end_output, args=(npm_start, cwd))
-    thread.start()
-    socketio.run(app, debug=True)
-    thread.join()
+    web_service_info['socketio'].run(app=web_service_info['app'],
+                                     host=web_service_info['backend_host'],
+                                     port=web_service_info['backend_port'], debug=debug)
 
 
-def start_production(app, socketio, npm_build, cwd):
-    """Start the backend in production mode."""
-
-    for output in execute_and_read_stdout(npm_build, cwd=cwd):
-        print(output, end="")
-
+def start_frontend_thread(web_service_info, npm_command, debug):
+    """Start the backend in debug mode."""
     env = os.environ.copy()
-    env['PATH'] = 'node_modules/.bin:' + env['PATH']
-    react_frontend = subprocess.Popen(['serve', '-s', 'build', '-l', '3000', '-n'], env=env,
-                                      cwd=cwd)
-    socketio.run(app, debug=False)
-    stdout, stderr = react_frontend.communicate()
-    print(f"{stdout}\nstderr:{stderr}")
+
+    if debug:
+        env['HOST'] = web_service_info['frontend_host']
+        env['PORT'] = web_service_info['frontend_port']
+
+        for output in execute_and_read_stdout(npm_command, cwd=web_service_info['cwd'], env=env):
+            print(output, end="")
+    else:
+        for output in execute_and_read_stdout(npm_command, cwd=web_service_info['cwd'], env=env):
+            print(output, end="")
+
+        env['PATH'] = 'node_modules/.bin:' + env['PATH']
+        react_frontend = subprocess.Popen([
+            'http-server',
+            'build',
+            '-a',
+            web_service_info['frontend_host'],
+            '-p',
+            web_service_info['frontend_port'],
+            f"--cors=http://{web_service_info['backend_host']}:{web_service_info['backend_port']}",
+        ], env=env, cwd=str(web_service_info['cwd']))
+        stdout, stderr = react_frontend.communicate()
+        print(f"frontend stdout: '{stdout}'\n\nfrontend stderr: '{stderr}'")
 
 
 def main():
     """Start up the server."""
 
     args = get_args()
-    app, socketio = create_app(graphml_dir=args.graphml_dir, frontend_url=args.frontend_url)
-    cwd = os.path.join(os.path.dirname(__file__), 'graph_visualizer_web_stack')
 
-    if platform.system() == 'Linux':
-        env_script = os.path.abspath(os.path.join(os.path.dirname(__file__), 'setup_nodejs_env.sh'))
-        node_check = f". {env_script}; node -v"
-        npm_install = [env_script, 'install']
-        npm_start = [env_script, 'start']
-        npm_build = [env_script, 'build']
-    else:
-        node_check = 'node -v'
-        npm_install = ['npm', 'install']
-        npm_start = ['npm', 'start']
-        npm_build = ['npm', 'run', 'build']
+    # TODO: add https command line option and support
+    server = BackendServer(graphml_dir=args.graphml_dir,
+                           frontend_url=f"http://{args.frontend_host}:{args.frontend_port}")
 
-    setup_node(node_check, npm_install, cwd)
+    app, socketio = server.get_app()
+    cwd = Path(__file__).parent / 'graph_visualizer_web_stack'
 
-    if args.debug:
-        start_debug(app, socketio, npm_start, cwd)
-    else:
-        start_production(app, socketio, npm_build, cwd)
+    web_service_info = {
+        'app': app,
+        'socketio': socketio,
+        'cwd': cwd,
+        'frontend_host': args.frontend_host,
+        'frontend_port': args.frontend_port,
+        'backend_host': args.backend_host,
+        'backend_port': args.backend_port,
+    }
+
+    node_check = 'node -v'
+    npm_start = ['npm', 'start']
+    npm_build = ['npm', 'run', 'build']
+
+    check_node(node_check, cwd)
+
+    frontend_thread = None
+    if args.launch in ['frontend', 'both']:
+        if args.debug:
+            npm_command = npm_start
+        else:
+            npm_command = npm_build
+
+        frontend_thread = threading.Thread(target=start_frontend_thread,
+                                           args=(web_service_info, npm_command, args.debug))
+        frontend_thread.start()
+
+    if args.launch in ['backend', 'both']:
+        start_backend(web_service_info, args.debug)
+
+    if frontend_thread:
+        frontend_thread.join()
 
 
 if __name__ == "__main__":

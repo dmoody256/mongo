@@ -28,7 +28,7 @@ const GraphCommitDisplay = ({graphFiles}) => {
   return (
     <Paper style={{height: '100%', width: '100%'}}>
       <List style={flexContainer}>
-        {['Scroll to commit', 'Commit Range Begin', 'Commit Range End'].map((text, index) => (
+        {['Scroll to commit', 'Commit Range Begin', 'Commit Range End'].map((text) => (
           <ListItem key={text}>
             <TextField size='small' label={text} />
           </ListItem>
@@ -43,9 +43,9 @@ const GraphCommitDisplay = ({graphFiles}) => {
         <Table style={{height: '100%'}}>
           <TableBody>
             <TableRow>
-              {graphFiles.map((file, index) => (
+              {graphFiles.map((file) => (
                 <TableCell key={file.id} >
-                  <GitHashButton text={file.git} file={file.value}/>
+                  <GitHashButton text={file.git}/>
                 </TableCell>
               ))}
             </TableRow>

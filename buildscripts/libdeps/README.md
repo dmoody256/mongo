@@ -53,11 +53,11 @@ The graph visualizer tools starts up a web service to provide a frontend GUI to 
 
     python3 -m pip install -r etc/pip/libdeps-requirements.txt
 
-Assuming you are on a remote workstation, you will need to make ssh tunnels to the web service to access the service in your local browser:
+Assuming you are on a remote workstation and using defaults, you will need to make ssh tunnels to the web service to access the service in your local browser. The frontend and backend both use a port (this case 3000 is the frontend and 5000 is the backend), and the default host is localhost, so you will need to open two tunnels so the frontend running in your local web browser can communicate with the backend. If you are using the default host and port the tunnel command will look like this:
 
     ssh -L 3000:localhost:3000 -L 5000:localhost:5000 ubuntu@workstation.hostname
 
-Next we need to start the web service. It will require to pass a directory where it will search for `.graphml` files:
+Next we need to start the web service. It will require you to pass a directory where it will search for `.graphml` files which contain the graph data for various commits:
 
     python3 buildscripts/libdeps/graph_visualizer.py --graphml-dir build/opt/libdeps
 

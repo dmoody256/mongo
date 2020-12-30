@@ -33,8 +33,8 @@ import sys
 from pathlib import Path
 
 import networkx
-import graph_analyzer
-from libdeps_graph_enums import CountTypes, LinterTypes
+import libdeps.analyzer
+from libdeps.graph import CountTypes, LinterTypes
 
 
 class LinterSplitArgs(argparse.Action):
@@ -50,7 +50,6 @@ class LinterSplitArgs(argparse.Action):
         if invalid_choices:
             raise Exception(
                 f"Invalid choices: {invalid_choices}\nMust use choices from {self.valid_choices}")
-        print(selected_choices)
 
         if 'all' in selected_choices or selected_choices == []:
             selected_choices = self.valid_choices
@@ -167,30 +166,30 @@ def main():
 
     args = setup_args_parser()
     graph = load_graph_data(args.graph_file, args.format)
-    libdeps = graph_analyzer.LibdepsGraph(graph)
+    libdeps_graph = libdeps.graph.LibdepsGraph(graph)
 
-    analysis = graph_analyzer.counter_factory(libdeps, args.counts)
+    analysis = libdeps.analyzer.counter_factory(libdeps_graph, args.counts)
 
     for depends in args.direct_depends:
-        analysis.append(graph_analyzer.DirectDependencies(libdeps, depends))
+        analysis.append(libdeps.analyzer.DirectDependencies(libdeps_graph, depends))
 
     for depends in args.common_depends:
-        analysis.append(graph_analyzer.CommonDependencies(libdeps, depends))
+        analysis.append(libdeps.analyzer.CommonDependencies(libdeps_graph, depends))
 
     for depends in args.exclude_depends:
-        analysis.append(graph_analyzer.ExcludeDependencies(libdeps, depends))
+        analysis.append(libdeps.analyzer.ExcludeDependencies(libdeps_graph, depends))
 
-    analysis += graph_analyzer.linter_factory(libdeps, args.lint)
+    analysis += libdeps.analyzer.linter_factory(libdeps_graph, args.lint)
 
     if args.build_data:
-        analysis.append(graph_analyzer.BuildDataReport(libdeps))
+        analysis.append(libdeps.analyzer.BuildDataReport(libdeps_graph))
 
-    ga = graph_analyzer.LibdepsGraphAnalysis(libdeps_graph=libdeps, analysis=analysis)
+    ga = libdeps.analyzer.LibdepsGraphAnalysis(libdeps_graph=libdeps_graph, analysis=analysis)
 
     if args.format == 'pretty':
-        ga_printer = graph_analyzer.GaPrettyPrinter(ga)
+        ga_printer = libdeps.analyzer.GaPrettyPrinter(ga)
     elif args.format == 'json':
-        ga_printer = graph_analyzer.GaJsonPrinter(ga)
+        ga_printer = libdeps.analyzer.GaJsonPrinter(ga)
     else:
         return
 

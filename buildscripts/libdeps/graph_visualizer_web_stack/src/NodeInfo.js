@@ -10,15 +10,15 @@ import Collapse from '@material-ui/core/Collapse';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import Paper from '@material-ui/core/Paper';
+import Box from '@material-ui/core/Box';
 
 import { getNodeInfos } from './redux/store';
-import { updateCheckbox } from './redux/nodes';
-import { socket } from './connect';
+
 import theme from './theme';
 
 import OverflowTooltip from './OverflowTooltip';
 
-const NodeInfo = ({nodeInfos, updateCheckbox, node, width}) => {
+const NodeInfo = ({nodeInfos, node, width}) => {
 
   const useStyles = makeStyles((theme) => ({
     root: {
@@ -34,7 +34,7 @@ const NodeInfo = ({nodeInfos, updateCheckbox, node, width}) => {
     }
   }));
 
-  const rowHeight = 30;
+  const rowHeight = 25;
   const classes = useStyles();
   const [openDependers, setOpenDependers] = React.useState(false);
   const [openDependencies, setOpenDependencies] = React.useState(false);
@@ -62,8 +62,10 @@ const NodeInfo = ({nodeInfos, updateCheckbox, node, width}) => {
   function renderAttribRow({ index, style, data }) {
 
     return (
-      <ListItem button style={style} key={index}>
-        <OverflowTooltip mr={1} value={data[index].name} text={String(data[index].name) + ": "}/>
+      <ListItem style={style} key={index}>
+        <Box style={{margin: '5px'}} >
+        <OverflowTooltip value={data[index].name} text={String(data[index].name) + ":"}/>
+        </Box>
         <OverflowTooltip value={String(data[index].value)} text={String(data[index].value)}/>
       </ListItem>
     );
@@ -72,11 +74,8 @@ const NodeInfo = ({nodeInfos, updateCheckbox, node, width}) => {
   function renderNodeRow({ index, style, data }) {
 
     return (
-      <ListItem button style={style} key={index} onClick={(event) => {
-        updateCheckbox({ node: data[index].node, value: 'flip'});
-        socket.emit('row_selected', {data: {node: data[index].node, name: data[index].name}, isSelected: 'flip'});}}
-      >
-        <OverflowTooltip mr={1} value={data[index].node} text={data[index].node}/>
+      <ListItem  style={style} key={index}>
+        <OverflowTooltip button name={data[index].name} value={data[index].node} text={data[index].node}/>
       </ListItem>
     );
   }
@@ -97,6 +96,7 @@ const NodeInfo = ({nodeInfos, updateCheckbox, node, width}) => {
       component="nav"
       aria-labelledby="nested-list-subheader"
       className={classes.root}
+      dense={true}
     >
       <Paper elevation={3} style={{backgroundColor: 'rgba(0, 0, 0, .03)'}}>
         <ListItem button>
@@ -177,4 +177,4 @@ const NodeInfo = ({nodeInfos, updateCheckbox, node, width}) => {
   );
 };
 
-export default connect(getNodeInfos, {updateCheckbox})(NodeInfo);
+export default connect(getNodeInfos, {})(NodeInfo);

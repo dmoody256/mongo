@@ -33,11 +33,9 @@ import sys
 import textwrap
 from pathlib import Path
 
-import networkx
+from libdeps.graph import CountTypes, DependsReportTypes, LinterTypes, EdgeProps, NodeProps
 
-from libdeps_graph_enums import CountTypes, DependsReportTypes, LinterTypes, EdgeProps, NodeProps
-
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 import scons  # pylint: disable=wrong-import-position
 
 sys.path.append(str(Path(scons.MONGODB_ROOT).joinpath('site_scons')))
@@ -541,19 +539,6 @@ class BuildDataReport(Analyzer):
         report['invocation'] = self.graph.graph.get('invocation')
         report['git_hash'] = self.graph.graph.get('git_hash')
         report['graph_schema_version'] = self.graph.graph.get('graph_schema_version')
-
-
-class LibdepsGraph(networkx.DiGraph):
-    """Class for analyzing the graph."""
-
-    def __init__(self, graph=networkx.DiGraph()):
-        """Load the graph data."""
-
-        super().__init__(incoming_graph_data=graph)
-
-        # Load in the graph and store a reversed version as well for quick look ups
-        # the in directions.
-        self.rgraph = graph.reverse()
 
 
 class LibdepsGraphAnalysis:

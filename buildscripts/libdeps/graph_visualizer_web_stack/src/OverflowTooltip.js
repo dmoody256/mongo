@@ -1,52 +1,70 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { connect } from "react-redux";
 import Tooltip from '@material-ui/core/Tooltip';
 import Fade from '@material-ui/core/Fade';
 import Box from '@material-ui/core/Box';
+import IconButton from '@material-ui/core/IconButton';
+import AddCircleOutline from '@material-ui/icons/AddCircleOutline';
+import Typography from '@material-ui/core/Typography';
+
+import { socket } from './connect';
+import { updateCheckbox } from './redux/nodes';
 
 const OverflowTip = props => {
 
   const textElementRef = useRef(null);
+  const [hoverStatus, setHover] = useState(false);
 
-  const compareSize = () => {
-    const compare =
+  const compareSize = (textElementRef) => {
+    if (textElementRef.current != null){
+      const compare =
       textElementRef.current.scrollWidth > textElementRef.current.offsetWidth;
-    setHover(compare);
+      setHover(compare);
+    }
   };
 
   useEffect(() => {
-    compareSize();
+    compareSize(textElementRef);
     window.addEventListener('resize', compareSize);
-  }, [props]);
 
+  }, [props, textElementRef.current]);
 
   useEffect(() => () => {
     window.removeEventListener('resize', compareSize);
   }, []);
 
 
-  const [hoverStatus, setHover] = useState(false);
-
   return (
     <Tooltip
       title={props.value}
       interactive
       disableHoverListener={!hoverStatus}
-      style={{fontSize: '2em'}}
+      style={{fontSize: '1em'}}
       enterDelay={500} TransitionComponent={Fade}
     >
       <Box
-        ref={textElementRef}
-        mr={props.mr}
         style={{
+          fontSize: '1em',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis'
         }}
       >
-        {props.text}
+        <Typography noWrap variant={"body2"} gutterBottom >
+          {props.button &&
+            <IconButton size='small' color='secondary' onClick={(event) => {
+
+              props.updateCheckbox({ node: props.text, value: 'flip'});
+              socket.emit('row_selected', {data: {node: props.text, name: props.name}, isSelected: 'flip'});
+            }}>
+              <AddCircleOutline style={{height:'15px', width: "15px"}}/>
+            </IconButton>
+          }
+          <span ref={textElementRef}>{props.text}</span>
+        </Typography>
       </Box>
     </Tooltip>
   );
 };
 
-export default OverflowTip;
+export default connect(null, {updateCheckbox})(OverflowTip);

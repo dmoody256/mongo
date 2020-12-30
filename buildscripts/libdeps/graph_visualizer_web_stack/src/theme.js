@@ -15,7 +15,7 @@ const theme = createMuiTheme({
       dark: grey[800],
       darkAccent: '#4d4d4d'
     },
-    type: "dark"
+    mode: "dark"
   }
 });
 
