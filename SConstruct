@@ -1225,8 +1225,6 @@ unknown_vars = env_vars.UnknownVariables()
 if unknown_vars:
     env.FatalError("Unknown variables specified: {0}", ", ".join(list(unknown_vars.keys())))
 
-if get_option('install-action') != 'default' and get_option('ninja') != "disabled":
-    env.FatalError("Cannot use non-default install actions when generating Ninja.")
 install_actions.setup(env, get_option('install-action'))
 
 def set_config_header_define(env, varname, varval = 1):
@@ -4464,6 +4462,34 @@ if get_option('ninja') != 'disabled':
                 "LD_LIBRARY_PATH":"'$_LIBDEPS_LD_PATH'"})
         env.NinjaRuleMapping("${SHLINKCOM}", provider)
         env.NinjaRuleMapping(env["SHLINKCOM"], provider)
+
+    # Setup a custom install rule to match the mongo install actions.
+    if sys.platform == "win32":
+        install_cmd = f'cmd.exe /c rd /s /q "$out" >nul 2>&1  || del /q /s "$out" >nul 2>&1 & '
+    else:
+        install_cmd = ""
+
+    if env.GetOption('install-action') == 'hardlink':
+        install_cmd += ("mklink /h $out $in 1>nul"
+                if sys.platform == "win32"
+                else "ln -f $in $out")
+
+    elif env.GetOption('install-action') == 'symlink':
+        install_cmd += ("mklink $out $in 1>nul"
+                if sys.platform == "win32"
+                else "ln -srf $in $out")
+
+    else:
+        install_cmd += ("1>NUL copy $in $out"
+            if sys.platform == "win32"
+            else "cp --remove-destination $in $out")
+
+    env.NinjaRule(
+        "INSTALL",
+        install_cmd,
+        description="Installing $out",
+        pool="install_pool",
+        restat=True)
 
     # idlc.py has the ability to print it's implicit dependencies
     # while generating, Ninja can consume these prints using the

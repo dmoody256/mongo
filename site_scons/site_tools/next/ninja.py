@@ -1196,7 +1196,18 @@ def register_custom_rule_mapping(env, pre_subst_string, rule):
     __NINJA_RULE_MAPPING[pre_subst_string] = rule
 
 
-def register_custom_rule(env, rule, command, description="", deps=None, pool=None, use_depfile=False, use_response_file=False, response_file_content="$rspc"):
+def register_custom_rule(
+    env,
+    rule,
+    command,
+    description="",
+    deps=None,
+    pool=None,
+    use_depfile=False,
+    use_response_file=False,
+    response_file_content="$rspc",
+    restat=False):
+
     """Allows specification of Ninja rules from inside SCons files."""
     rule_obj = {
         "command": command,
@@ -1215,6 +1226,9 @@ def register_custom_rule(env, rule, command, description="", deps=None, pool=Non
     if use_response_file:
         rule_obj["rspfile"] = "$out.rsp"
         rule_obj["rspfile_content"] = response_file_content
+
+    if restat:
+        rule_obj["restat"] = 1
 
     env[NINJA_RULES][rule] = rule_obj
 
