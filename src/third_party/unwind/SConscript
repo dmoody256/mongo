@@ -35,6 +35,7 @@ unwind_sources = [
     'dwarf/Lfind_unwind_table.c',
     'dwarf/Lparser.c',
     'dwarf/Lpe.c',
+
     'elf64.c',
     'mi/backtrace.c',
     'mi/dyn-cancel.c',
@@ -57,6 +58,7 @@ unwind_sources = [
     'mi/Lset_reg.c',
     'mi/mempool.c',
     'mi/strerror.c',
+
     'os-${TARGET_OS}.c',
     '${TARGET_ARCH}/getcontext.S',
     '${TARGET_ARCH}/is_fpreg.c',
@@ -92,9 +94,8 @@ env.Append(
     CCFLAGS=[
         '-fcommon',
         '-fexceptions',
-        '-Wno-unused-result',
-        '-Wno-unused-value',
-        '-Wno-unused-variable',
+        '-Wall',
+        '-Wsign-compare',
     ])
 
 if env.ToolchainIs('clang'):
@@ -120,6 +121,8 @@ env.Append(
     CPPDEFINES=[
         'HAVE_CONFIG_H',
         '_GNU_SOURCE',
+        'NDEBUG',
+        '__EXTENSIONS__'
     ])
 
 env.Library(
