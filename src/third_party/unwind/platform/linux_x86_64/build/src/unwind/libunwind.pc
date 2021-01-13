@@ -1,0 +1,11 @@
+prefix=/root/mongo/src/third_party/unwind/platform/linux_x86_64/install
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libunwind
+Description: libunwind base library
+Version: 1.5.0
+Libs: -L${libdir} -lunwind
+Libs.private:  -lz
+Cflags: -I${includedir}
