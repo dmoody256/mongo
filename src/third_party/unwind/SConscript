@@ -90,11 +90,8 @@ if env['TARGET_ARCH'] == 'aarch64':
 
 env.Append(
     CCFLAGS=[
-        '-fcommon',
         '-fexceptions',
         '-Wno-unused-result',
-        '-Wno-unused-value',
-        '-Wno-unused-variable',
     ])
 
 if env.ToolchainIs('clang'):
@@ -120,6 +117,8 @@ env.Append(
     CPPDEFINES=[
         'HAVE_CONFIG_H',
         '_GNU_SOURCE',
+        'NDEBUG',
+        '__EXTENSIONS__'
     ])
 
 env.Library(

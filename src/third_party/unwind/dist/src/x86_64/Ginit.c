@@ -49,13 +49,6 @@ static struct unw_addr_space local_addr_space;
 
 unw_addr_space_t unw_local_addr_space = &local_addr_space;
 
-HIDDEN unw_dyn_info_list_t _U_dyn_info_list;
-
-/* XXX fix me: there is currently no way to locate the dyn-info list
-       by a remote unwinder.  On ia64, this is done via a special
-       unwind-table entry.  Perhaps something similar can be done with
-       DWARF2 unwind info.  */
-
 static void
 put_unwind_info (unw_addr_space_t as, unw_proc_info_t *proc_info, void *arg)
 {
@@ -66,7 +59,13 @@ static int
 get_dyn_info_list_addr (unw_addr_space_t as, unw_word_t *dyn_info_list_addr,
                         void *arg)
 {
-  *dyn_info_list_addr = (unw_word_t) &_U_dyn_info_list;
+#ifndef UNW_LOCAL_ONLY
+# pragma weak _U_dyn_info_list_addr
+  if (!_U_dyn_info_list_addr)
+    return -UNW_ENOINFO;
+#endif
+  // Access the `_U_dyn_info_list` from `LOCAL_ONLY` library, i.e. libunwind.so.
+  *dyn_info_list_addr = _U_dyn_info_list_addr ();
   return 0;
 }
 
@@ -74,6 +73,35 @@ get_dyn_info_list_addr (unw_addr_space_t as, unw_word_t *dyn_info_list_addr,
 #define PAGE_START(a)   ((a) & ~(PAGE_SIZE-1))
 
 static int mem_validate_pipe[2] = {-1, -1};
+
+#ifdef HAVE_PIPE2
+static inline void
+do_pipe2 (int pipefd[2])
+{
+  pipe2 (pipefd, O_CLOEXEC | O_NONBLOCK);
+}
+#else
+static inline void
+set_pipe_flags (int fd)
+{
+  int fd_flags = fcntl (fd, F_GETFD, 0);
+  int status_flags = fcntl (fd, F_GETFL, 0);
+
+  fd_flags |= FD_CLOEXEC;
+  fcntl (fd, F_SETFD, fd_flags);
+
+  status_flags |= O_NONBLOCK;
+  fcntl (fd, F_SETFL, status_flags);
+}
+
+static inline void
+do_pipe2 (int pipefd[2])
+{
+  pipe (pipefd);
+  set_pipe_flags(pipefd[0]);
+  set_pipe_flags(pipefd[1]);
+}
+#endif
 
 static inline void
 open_pipe (void)
@@ -83,7 +111,7 @@ open_pipe (void)
   if (mem_validate_pipe[1] != -1)
     close (mem_validate_pipe[1]);
 
-  pipe2 (mem_validate_pipe, O_CLOEXEC | O_NONBLOCK);
+  do_pipe2 (mem_validate_pipe);
 }
 
 ALWAYS_INLINE
@@ -131,7 +159,12 @@ static int msync_validate (void *addr, size_t len)
 #ifdef HAVE_MINCORE
 static int mincore_validate (void *addr, size_t len)
 {
-  unsigned char mvec[2]; /* Unaligned access may cross page boundary */
+  /* Unaligned access may cross page boundary */
+  #if __FreeBSD__
+    char mvec[2];
+  #else
+    unsigned char mvec[2];
+  #endif
 
   /* mincore could fail with EAGAIN but we conservatively return -1
      instead of looping. */
@@ -156,7 +189,11 @@ tdep_init_mem_validate (void)
 #ifdef HAVE_MINCORE
   unsigned char present = 1;
   unw_word_t addr = PAGE_START((unw_word_t)&present);
-  unsigned char mvec[1];
+  #if __FreeBSD__
+    char mvec[1];
+  #else
+    unsigned char mvec[1];
+  #endif
   int ret;
   while ((ret = mincore ((void*)addr, PAGE_SIZE, mvec)) == -1 &&
          errno == EAGAIN) {}
@@ -186,7 +223,7 @@ is_cached_valid_mem(unw_word_t addr)
   int i;
   for (i = 0; i < NLGA; i++)
     {
-      if (addr == &last_good_addr[i])
+      if (addr == last_good_addr[i])
         return 1;
     }
   return 0;
