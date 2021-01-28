@@ -32,7 +32,9 @@ represents the dependency information between all binaries from the build.
 import sys
 import textwrap
 import copy
+import json
 from pathlib import Path
+import progressbar
 
 from libdeps.graph import CountTypes, DependsReportTypes, LinterTypes, EdgeProps, NodeProps
 
@@ -80,27 +82,36 @@ def schema_check(func, schema_version):
 class Analyzer:
     """Base class for different types of analyzers."""
 
-    def __init__(self, graph):
+    @staticmethod
+    def progressbar(items):
+        for item in items:
+            yield item
+
+    def __init__(self, graph, progress=True):
         """Store the graph and extract the build_dir from the graph."""
 
         self._dependents_graph = graph
         self._dependency_graph = graph.get_reverse_graph()
         self._build_dir = Path(graph.graph['build_dir'])
+        self.set_progress(progress)
+
 
     def _strip_build_dir(self, node):
         """Small util function for making args match the graph paths."""
 
-        node = Path(node)
-        if str(node).startswith(str(self._build_dir)):
-            return str(node.relative_to(self._build_dir))
-        else:
-            raise Exception(
-                f"build path not in node path: node: {node} build_dir: {self._build_dir}")
+        return str(Path(node).relative_to(self._build_dir))
+
 
     def _strip_build_dirs(self, nodes):
         """Small util function for making a list of nodes match graph paths."""
 
         return [self._strip_build_dir(node) for node in nodes]
+
+    def set_progress(self, value):
+        if value:
+            self._progressbar = progressbar.progressbar
+        else:
+            self._progressbar = Analyzer.progressbar
 
 
 class Counter(Analyzer):
@@ -308,7 +319,7 @@ class ProgCounter(Counter):
         return self.node_type_count(NodeProps.bin_type.name, 'Program')
 
 
-def counter_factory(graph, counters):
+def counter_factory(graph, counters, progressbar=True):
     """Construct counters from a list of strings."""
 
     counter_map = {
@@ -331,7 +342,10 @@ def counter_factory(graph, counters):
     counter_objs = []
     for counter in counters:
         if counter in counter_map:
-            counter_objs.append(counter_map[counter](graph))
+            counter_obj = counter_map[counter](graph)
+            counter_obj.set_progress(progressbar)
+            counter_objs.append(counter_obj)
+
         else:
             print(f"Skipping unknown counter: {counter}")
 
@@ -422,7 +436,7 @@ class ExcludeDependencies(Analyzer):
         report[DependsReportTypes.exclude_depends.name][tuple(self._nodes)] = self.run()
 
 
-class PathDependencies(Analyzer):
+class GraphPaths(Analyzer):
     """Finds all paths between two nodes in the graph."""
 
     def __init__(self, graph, nodes):
@@ -465,8 +479,12 @@ class PathDependencies(Analyzer):
         # and adds that as a path. Probably could break, but don't want to silent cases
         # where the node is listed twice as a dependency
         for node in self._dependency_graph[self._end_node]:
-            if self._start_node == node:
-                paths.append([self._start_node, self._end_node])
+            if (self._dependency_graph[self._end_node][node].get(EdgeProps.direct.name)
+                    and self._dependency_graph[self._end_node][node].get(
+                        EdgeProps.visibility.name) == int(deptype.Public)):
+
+                if self._start_node == node:
+                    paths.append([self._start_node, self._end_node])
 
         # Now we need to walk the direct public tree backwards, recording the nodes we
         # took as we go, so we can see if the start node is in that tree and
@@ -479,13 +497,13 @@ class PathDependencies(Analyzer):
     def report(self, report):
         """Add the path list to the report."""
 
-        if DependsReportTypes.path_depends.name not in report:
-            report[DependsReportTypes.path_depends.name] = {}
-        report[DependsReportTypes.path_depends.name][tuple(
+        if DependsReportTypes.graph_paths.name not in report:
+            report[DependsReportTypes.graph_paths.name] = {}
+        report[DependsReportTypes.graph_paths.name][tuple(
             [self._start_node, self._end_node])] = [f"{' -> '.join(path)}" for path in self.run()]
 
 
-class CriticalEdges(PathDependencies):
+class CriticalEdges(GraphPaths):
     """Finds all edges between two nodes, where remove that edge breaks the dependency."""
 
     @schema_check(schema_version=1)
@@ -524,33 +542,9 @@ class CriticalEdges(PathDependencies):
                                                               self._end_node])] = self.run()
 
 
+
 class HeaviestPublicLinter(Analyzer):
     """Lints the graph for the heaviest edges, or edge with the most resulting transitive edges."""
-
-    def _count_edge(self, edge, checked_edges, count):
-        """Determine if a given edge should be counted."""
-
-        if edge not in checked_edges:
-            checked_edges.add(edge)
-            original_node = edge[0]
-            depender = edge[1]
-            try:
-                edge_attribs = self._dependents_graph[original_node][depender]
-
-                if (not edge_attribs.get(EdgeProps.direct.name) and
-                    (edge_attribs.get(EdgeProps.visibility.name) == int(deptype.Public)
-                     or edge_attribs.get(EdgeProps.visibility.name) == int(deptype.Interface))):
-                    count += [edge]
-            except KeyError:
-                pass
-
-    def _count_transitive_tree(self, node, original_nodes, checked_edges, count):
-        """Recurse the resulting transitive tree counting nodes."""
-
-        for depender in self._dependents_graph[node]:
-            for original_node in original_nodes:
-                edge = (original_node, depender)
-                self._count_edge(edge, checked_edges, count)
 
     def _get_trans_nodes(self, edge, trans_pub_nodes):
         """Get all the nodes that the target edge will transitively induce."""
@@ -561,35 +555,71 @@ class HeaviestPublicLinter(Analyzer):
                         EdgeProps.visibility.name) == int(deptype.Interface)):
                 trans_pub_nodes.add(trans_node)
 
+    def count_edges(self, edge, unique_trans_nodes):
+        """Sum all the edges created down a tree growing off an edge."""
+
+        edge_attribs = self._dependents_graph[edge[0]][edge[1]]
+
+        if (edge_attribs.get(EdgeProps.direct.name)
+                and edge_attribs.get(EdgeProps.visibility.name) == int(deptype.Public)):
+
+            # add in the current count for edges we have brought forward.
+            count = len(unique_trans_nodes)
+
+            # if everything this node brings forward has become redundant so
+            # skip going any further in this tree
+            if len(unique_trans_nodes) > 0:
+
+                # we need to remove any redundant edges found from other dependencies
+                # at the current destination node. We need to make local copy so we don't
+                # modify the same list on different paths down the tree.
+                local_copy = copy.deepcopy(unique_trans_nodes)
+                for node in self._dependency_graph[edge[1]]:
+
+                    if node == edge[0]:
+                        continue
+
+                    other_edge_attribs = self._dependency_graph[edge[1]][node]
+                    if (other_edge_attribs.get(EdgeProps.direct.name)
+                        and other_edge_attribs.get(EdgeProps.visibility.name) == int(deptype.Public)):
+
+                        redundant_trans_nodes = set()
+                        self._get_trans_nodes((node, edge[0]), redundant_trans_nodes)
+                        for trans in redundant_trans_nodes:
+                            try:
+                                local_copy.remove(trans)
+                            except KeyError:
+                                pass
+
+                for node in self._dependents_graph[edge[1]]:
+                    count += self.count_edges((edge[1], node), local_copy)
+                return count
+
+        return 0
+
     @schema_check(schema_version=1)
     def run(self):
         """Run the linter counting the weights of all direct public edges."""
 
         edges = []
-        checked_edges = set()
 
-        # We will check every direct public edge in the graph as those are what generate transitive
-        # edges. For each direct public edge, we need to get all depedendenies induced by it, and
-        # then count all the transitive edges created by those induced edges along with edges created
-        # by the original direct public node.
+        dir_pub_edges = []
         for edge in self._dependents_graph.edges:
             edge_attribs = self._dependents_graph[edge[0]][edge[1]]
-
             if (edge_attribs.get(EdgeProps.direct.name)
                     and edge_attribs.get(EdgeProps.visibility.name) == int(deptype.Public)):
+                dir_pub_edges.append(edge)
 
-                # Here we are getting all the nodes to check from induced edges.
-                trans_pub_nodes = set([edge[0]])
-                self._get_trans_nodes(edge, trans_pub_nodes)
-
-                count = []
-                self._count_transitive_tree(edge[1], list(trans_pub_nodes), checked_edges, count)
-                edges.append((len(count), edge))
+        for edge in self._progressbar(dir_pub_edges):
+            unique_trans_nodes = set([edge[0]])
+            self._get_trans_nodes(edge, unique_trans_nodes)
+            count = self.count_edges(edge, unique_trans_nodes)
+            edges.append((count, edge))
 
         return list(reversed(sorted(edges)))
 
     def report(self, report):
-        """Report the lint issies."""
+        """Report the lint issues."""
 
         report[LinterTypes.heaviest_pub_dep.name] = self.run()
 
@@ -690,7 +720,7 @@ class UnusedPublicLinter(Analyzer):
         report[LinterTypes.public_unused.name] = self.run()
 
 
-def linter_factory(graph, linters):
+def linter_factory(graph, linters, progressbar=True):
     """Construct linters from a list of strings."""
 
     linter_map = {
@@ -704,7 +734,7 @@ def linter_factory(graph, linters):
     linters_objs = []
     for linter in linters:
         if linter in linter_map:
-            linters_objs.append(linter_map[linter](graph))
+            linters_objs.append(linter_map[linter](graph, progressbar))
         else:
             print(f"Skipping unknown counter: {linter}")
 
@@ -773,9 +803,12 @@ class GaJsonPrinter(GaPrinter):
     def print(self):
         """Print the result data."""
 
-        import json  # pylint: disable=import-outside-toplevel
-        results = self.libdeps_graph_analysis.get_results()
-        print(json.dumps(self.serialize(results)))
+        print(self.get_json())
+
+    def get_json(self):
+
+        results = self._libdeps_graph_analysis.get_results()
+        return json.dumps(self.serialize(results))
 
 
 class GaPrettyPrinter(GaPrinter):
@@ -827,11 +860,11 @@ class GaPrettyPrinter(GaPrinter):
                     f"=>depends: {nodes[0]}, exclude: {nodes[1:]}:",
                     results[DependsReportTypes.exclude_depends.name][nodes])
 
-        if DependsReportTypes.path_depends.name in results:
+        if DependsReportTypes.graph_paths.name in results:
             print("\nDependency graph paths:")
-            for nodes in results[DependsReportTypes.path_depends.name]:
+            for nodes in results[DependsReportTypes.graph_paths.name]:
                 self._print_results_node_list(f"=>start node: {nodes[0]}, end node: {nodes[1]}:",
-                                              results[DependsReportTypes.path_depends.name][nodes])
+                                              results[DependsReportTypes.graph_paths.name][nodes])
 
         if DependsReportTypes.critical_edges.name in results:
             print("\nCritical Edges:")
@@ -876,5 +909,7 @@ class GaPrettyPrinter(GaPrinter):
             print(f"\nLibdepsLinter: Edges created from direct public links (top {top_n}):")
             for weight in results[LinterTypes.heaviest_pub_dep.name][:top_n]:
                 print(f"    {weight[0]}: [{weight[1][1]}] has direct public link [{weight[1][0]}]")
-            print(f"    |: ...")
-            print(f"    V: {len(results[LinterTypes.heaviest_pub_dep.name])-top_n} others")
+            if len(results) > top_n:
+                print(f"    |: ...")
+                print(f"    V: {len(results[LinterTypes.heaviest_pub_dep.name])-top_n} others")
+

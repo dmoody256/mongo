@@ -31,6 +31,7 @@ import argparse
 import textwrap
 import sys
 from pathlib import Path
+import copy
 
 import networkx
 import libdeps.analyzer
@@ -50,10 +51,13 @@ class LinterSplitArgs(argparse.Action):
         if invalid_choices:
             raise Exception(
                 f"Invalid choices: {invalid_choices}\nMust use choices from {self.valid_choices}")
-
-        if 'all' in selected_choices or selected_choices == []:
-            selected_choices = self.valid_choices
+        if 'all' in selected_choices:
+            selected_choices = copy.copy(self.valid_choices)
             selected_choices.remove('all')
+        if selected_choices == []:
+            selected_choices = copy.copy(self.default_choices)
+            if 'all' in selected_choices:
+                selected_choices('all')
         setattr(namespace, self.dest, [opt.replace('-', '_') for opt in selected_choices])
 
 
@@ -61,12 +65,15 @@ class CountSplitArgs(LinterSplitArgs):
     """Special case of common custom arg action for Count types."""
 
     valid_choices = [name[0].replace('_', '-') for name in CountTypes.__members__.items()]
-
+    default_choices = [name[0] for name in CountTypes.__members__.items() if name[0] != 'all']
 
 class LintSplitArgs(LinterSplitArgs):
     """Special case of common custom arg action for Count types."""
 
     valid_choices = [name[0].replace('_', '-') for name in LinterTypes.__members__.items()]
+    default_choices = [
+        LinterTypes.public_unused.name
+    ]
 
 
 class CustomFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
@@ -127,12 +134,12 @@ def setup_args_parser():
 
     parser.add_argument(
         '--counts', metavar='COUNT,', nargs='*', action=CountSplitArgs,
-        default=[name[0] for name in CountTypes.__members__.items() if name[0] != 'all'],
+        default=CountSplitArgs.default_choices,
         help="Output various counts from the graph. Comma separated list.")
 
     parser.add_argument(
         '--lint', metavar='LINTER,', nargs='*', action=LintSplitArgs,
-        default=[name[0] for name in LinterTypes.__members__.items() if name[0] != 'all'],
+        default=LintSplitArgs.default_choices,
         help="Perform various linters on the graph. Comma separated list.")
 
     parser.add_argument('--direct-depends', action='append', default=[],
@@ -146,7 +153,7 @@ def setup_args_parser():
         "Print nodes which depend on the first node of N nodes, but exclude all nodes listed there after."
     )
 
-    parser.add_argument('--path-depends', nargs='+', action='append', default=[],
+    parser.add_argument('--graph-paths', nargs='+', action='append', default=[],
                         help="Print all depends paths between 2 nodes")
 
     parser.add_argument(
@@ -187,8 +194,8 @@ def main():
     for depends in args.exclude_depends:
         analysis.append(libdeps.analyzer.ExcludeDependencies(libdeps_graph, depends))
 
-    for depends in args.path_depends:
-        analysis.append(libdeps.analyzer.PathDependencies(libdeps_graph, depends))
+    for depends in args.graph_paths:
+        analysis.append(libdeps.analyzer.GraphPaths(libdeps_graph, depends))
 
     for depends in args.critical_edges:
         analysis.append(libdeps.analyzer.CriticalEdges(libdeps_graph, depends))

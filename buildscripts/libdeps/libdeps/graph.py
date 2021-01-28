@@ -57,7 +57,7 @@ class DependsReportTypes(Enum):
     direct_depends = auto()
     common_depends = auto()
     exclude_depends = auto()
-    path_depends = auto()
+    graph_paths = auto()
     critical_edges = auto()
 
 
