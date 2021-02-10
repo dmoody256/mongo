@@ -3608,11 +3608,10 @@ class File(Base):
             return self.cachedir_csig
         except AttributeError:
             pass
-
-        cachedir, cachefile = self.get_build_env().get_CacheDir().cachepath(self)
+        cache = self.get_build_env().get_CacheDir()
+        cachedir, cachefile = cache.cachepath(self)
         if not self.exists() and cachefile and os.path.exists(cachefile):
-            self.cachedir_csig = SCons.Util.MD5filesignature(cachefile, \
-                SCons.Node.FS.File.md5_chunksize * 1024)
+            self.cachedir_csig = cache.get_cachedir_csig(self)
         else:
             self.cachedir_csig = self.get_csig()
         return self.cachedir_csig
