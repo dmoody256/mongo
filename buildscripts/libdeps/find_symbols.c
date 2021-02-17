@@ -194,8 +194,8 @@ char** get_ldd(char* target, char* ld_libpath, int* return_size) {
         "LD_LIBRARY_PATH=%s ldd %s | awk 'NF == 4 {print $3}; NF == 2 {print $1}'";
 #elif __APPLE__
     const char* target_ldd_format =
-        "for LIB in $(otool -L %s | awk '{print $1};' "
-        "| sed 's/@rpath\\///'); do for PATHLIB in %s; do if [ -e "
+        "for LIB in $(otool -L %s | awk '{gsub(/@rpath\//, "", $1); print $1;}'); "
+        "do for PATHLIB in %s; do if [ -e "
         "$PATHLIB/$LIB ]; then echo $PATHLIB/$LIB; break; fi; done; done;";
 #endif
 
