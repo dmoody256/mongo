@@ -10587,6 +10587,9 @@ buildvariants:
   - name: compile_test_and_package_parallel_dbtest_stream_TG
     distros:
     - rhel80-medium
+  - name: libdeps_graph_linting_TG
+    distros:
+      - rhel80-large
   - name: burn_in_tests_gen
   - name: .aggfuzzer
   - name: .aggregation
