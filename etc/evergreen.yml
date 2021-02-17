@@ -3545,7 +3545,7 @@ tasks:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: src/libdeps.graphml.gz
-        remote_file: ${project}/${build_variant}/${revision}/artifacts/libdeps.graphml.gz.${build_id}-${task_name}.${execution}
+        remote_file: ${project}/${build_variant}/${revision}/artifacts/libdeps.graphml.${build_id}-${task_name}.${execution}.gz
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/gzip}
