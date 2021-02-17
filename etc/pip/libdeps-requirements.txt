@@ -1,1 +1,1 @@
--r components/core.req
+-r components/libdeps.req
