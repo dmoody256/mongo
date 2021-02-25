@@ -456,6 +456,12 @@ add_option('cache-dir',
     help='Specify the directory to use for caching objects if --cache is in use',
 )
 
+add_option('cache-compress',
+    choices=["on", "off"],
+    default="off",
+    help='Enable/disable compressing files to the cache. Slightly slower to push to cache, but faster to pull.',
+)
+
 add_option("cxx-std",
     choices=["17"],
     default="17",
@@ -1176,6 +1182,13 @@ if get_option('build-tools') == 'next':
     SCons.Tool.DefaultToolpath.insert(0, os.path.abspath('site_scons/site_tools/next'))
 
 env = Environment(variables=env_vars, **envDict)
+
+if get_option('cache-compress') == 'on':
+    compressed_cache = Tool('compressed_cache')
+    if compressed_cache.exists(env):
+        compressed_cache(env)
+    else:
+        env.FatalError("Failed to enable compressed-cache tool.")
 
 # Only print the spinner if stdout is a tty
 if sys.stdout.isatty():
