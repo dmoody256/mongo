@@ -131,11 +131,12 @@ env.Substfile(
     ],
     SUBST_DICT=replacements)
 
-env.Install(
-    target='.',
+env.Substfile(
+    target='wiredtiger_ext.h',
     source=[
         'src/include/wiredtiger_ext.h'
     ],
+    SUBST_DICT={}
 )
 
 env.Alias('generated-sources', "wiredtiger.h")
