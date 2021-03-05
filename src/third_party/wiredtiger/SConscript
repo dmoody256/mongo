@@ -131,6 +131,9 @@ env.Substfile(
     ],
     SUBST_DICT=replacements)
 
+# This should be a copy which would be an optimiztion
+# but ninja does not supports SCons Copy function action until
+# SERVER-54914 is completed.
 env.Substfile(
     target='wiredtiger_ext.h',
     source=[

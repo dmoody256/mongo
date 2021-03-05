@@ -4459,7 +4459,7 @@ if get_option('ninja') != 'disabled':
 
         if env.GetOption('install-action') == 'hardlink':
             if env.TargetOSIs('windows'):
-                install_cmd = "mklink /h $out $in 1>nul"
+                install_cmd = "cmd.exe /c mklink /h $out $in 1>nul"
             else:
                 install_cmd = "ln $in $out"
 
@@ -4491,13 +4491,16 @@ if get_option('ninja') != 'disabled':
             env.NinjaRegisterFunctionHandler("installFunc", symlink_install_action_function)
 
             if env.TargetOSIs('windows'):
-                install_cmd = "mklink $out $relpath 1>nul"
+                install_cmd = "cmd.exe /c mklink $out $relpath 1>nul"
             else:
                 install_cmd = "ln -s $relpath $out"
 
         else:
             if env.TargetOSIs('windows'):
-                install_cmd = "1>NUL copy /b $in $out"
+                # The /b option here will make sure that windows updates the mtime
+                # when copying the file. This allows to not need to use restat for windows
+                # copy commands.
+                install_cmd = "cmd.exe /c copy /b $in $out 1>NUL"
             else:
                 install_cmd = "cp $in $out"
 
@@ -4530,7 +4533,7 @@ if get_option('ninja') != 'disabled':
             # the $in_newline to get newlines into our response file
             env.NinjaRule(
                 "WINLINK",
-                "$env$WINLINK @$out1.rsp",
+                "$env$WINLINK @$out.rsp",
                 description="Linking $out",
                 deps=None,
                 pool="local_pool",

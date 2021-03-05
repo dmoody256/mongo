@@ -445,6 +445,9 @@ class NinjaState:
         escape = env.get("ESCAPE", lambda x: x)
 
         self.variables = {
+            # The /b option here will make sure that windows updates the mtime
+            # when copying the file. This allows to not need to use restat for windows
+            # copy commands. 
             "COPY": "cmd.exe /c 1>NUL copy /b" if sys.platform == "win32" else "cp",
             "SCONS_INVOCATION": "{} {} __NINJA_NO=1 $out".format(
                 sys.executable,
@@ -474,21 +477,21 @@ class NinjaState:
             # which can't use the shell command as it's compile
             # command.
             "CC": {
-                "command": "$env$CC @$out1.rsp",
+                "command": "$env$CC @$out.rsp",
                 "description": "Compiling $out",
-                "rspfile": "$out1.rsp",
+                "rspfile": "$out.rsp",
                 "rspfile_content": "$rspc",
             },
             "CXX": {
-                "command": "$env$CXX @$out1.rsp",
+                "command": "$env$CXX @$out.rsp",
                 "description": "Compiling $out",
-                "rspfile": "$out1.rsp",
+                "rspfile": "$out.rsp",
                 "rspfile_content": "$rspc",
             },
             "LINK": {
-                "command": "$env$LINK @$out1.rsp",
+                "command": "$env$LINK @$out.rsp",
                 "description": "Linking $out",
-                "rspfile": "$out1.rsp",
+                "rspfile": "$out.rsp",
                 "rspfile_content": "$rspc",
                 "pool": "local_pool",
             },
@@ -499,9 +502,9 @@ class NinjaState:
             # to do the same. See related for more info:
             # https://jira.mongodb.org/browse/SERVER-49457
             "AR": {
-                "command": "$env$AR @$out1.rsp",
+                "command": "$env$AR @$out.rsp",
                 "description": "Archiving $out",
-                "rspfile": "$out1.rsp",
+                "rspfile": "$out.rsp",
                 "rspfile_content": "$rspc",
                 "pool": "local_pool",
             },
@@ -637,24 +640,34 @@ class NinjaState:
         for var, val in self.variables.items():
             ninja.variable(var, val)
 
+        # This is the command that is used to clean a target before building it, 
+        # excluding precious targets. The windows command is split into two parts
+        # to handle files and directories separately. The rd command only accepts one
+        # one directory so we have to loop on multiple outputs.
+        rm_cmd = f'cmd.exe /c del /q $rm_outs >nul 2>&1 & cmd.exe /c (for %a in ($rm_outs) do rd /s /q "%~a") >nul 2>&1 &' if sys.platform == "win32" else 'rm -rf $out;'
+
         # Make two sets of rules to honor scons Precious setting. The build nodes themselves
         # will then reselect their rule according to the precious being set for that node.
-        rm_cmd = f'cmd.exe /c del /q $out >nul 2>&1 & cmd.exe /c (for %a in ($out) do rd /s /q "%~a") >nul 2>&1 &' if sys.platform == "win32" else 'rm -rf $out;'
+        precious_rules = {}
         for rule, kwargs in self.rules.items():
-            # do not worry about precious for commands the dont have targets (phony)
-            # or that will callback to scons (which maintains its own precious)
+            # Do not worry about precious for commands the dont have targets (phony)
+            # or that will callback to scons (which maintains its own precious).
             if rule not in ['phony', 'TEMPLATE', 'REGENERATE']:
-                ninja.rule(rule + "_PRECIOUS", **kwargs)
+                precious_rule = rule + "_PRECIOUS"
+                precious_rules[precious_rule] = kwargs.copy()
+                ninja.rule(precious_rule, **precious_rules[precious_rule])
+
                 kwargs['command'] = f"{rm_cmd} " + kwargs['command']
                 ninja.rule(rule, **kwargs)
             else:
                 ninja.rule(rule, **kwargs)
+        self.rules.update(precious_rules)
 
         generated_source_files = sorted({
             output
             # First find builds which have header files in their outputs.
             for build in self.builds.values()
-            if  self.has_generated_sources(build.get("outputs",[]))
+            if self.has_generated_sources(build.get("outputs",[]))
             for output in build["outputs"]
             # Collect only the header files from the builds with them
             # in their output. We do this because is_generated_source
@@ -695,7 +708,11 @@ class NinjaState:
 
         for build, kwargs in self.builds.items():
             if kwargs.get('variables') and kwargs['variables'].get('precious'):
-                kwargs['rule'] = kwargs['rule'] + '_PRECIOUS'
+                kwargs['rule'] = kwargs['rule'] + '_PRECIOUS'  
+            elif kwargs['rule'] not in ['phony', 'TEMPLATE', 'REGENERATE']:
+                if not kwargs.get('variables'):
+                    kwargs['variables'] = {}
+                kwargs['variables']['rm_outs'] = kwargs['outputs'].copy()
 
         for build in [self.builds[key] for key in sorted(self.builds.keys())]:
             if build["rule"] == "TEMPLATE":
@@ -1004,8 +1021,7 @@ def gen_get_response_file_command(env, rule, tool, tool_is_dynamic=False, custom
         rsp_content = " ".join(rsp_content)
 
         variables = {
-            "rspc": rsp_content,
-            "out1": targets[0]}
+            "rspc": rsp_content}
 
         variables[rule] = cmd
         if use_command_env:
@@ -1224,7 +1240,7 @@ def register_custom_rule(
     }
 
     if use_depfile:
-        rule_obj["depfile"] = os.path.join(get_path(env['NINJA_BUILDDIR']), '$out1.depfile')
+        rule_obj["depfile"] = os.path.join(get_path(env['NINJA_BUILDDIR']), '$out.depfile')
 
     if deps is not None:
         rule_obj["deps"] = deps
@@ -1233,7 +1249,7 @@ def register_custom_rule(
         rule_obj["pool"] = pool
 
     if use_response_file:
-        rule_obj["rspfile"] = "$out1.rsp"
+        rule_obj["rspfile"] = "$out.rsp"
         rule_obj["rspfile_content"] = response_file_content
 
     if restat:
@@ -1434,8 +1450,8 @@ def generate(env):
     env.AddMethod(gen_get_response_file_command, "NinjaGenResponseFileProvider")
     env.AddMethod(set_build_node_callback, "NinjaSetBuildNodeCallback")
 
-    # Expose ninja internal node paths converstion function for writing
-    # custom function action handlers.
+    # Expose ninja node path converstion functions to make writing
+    # custom function action handlers easier.
     env.AddMethod(lambda env, node: get_outputs(node), "NinjaGetOutputs")
     env.AddMethod(lambda env, node, skip_unknown_types=False: get_inputs(node, skip_unknown_types), "NinjaGetInputs")
     env.AddMethod(lambda env, node, skip_sources=False: get_dependencies(node), "NinjaGetDependencies")
