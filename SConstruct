@@ -2106,7 +2106,7 @@ def init_no_global_libdeps_tag_emitter(target, source, env):
             init_no_global_add_flags(target, "", "")
     return target, source
 
-for target_builder in ['Program', 'SharedLibrary', 'SharedArchive', 'StaticLibrary']:
+for target_builder in ['SharedLibrary', 'SharedArchive', 'StaticLibrary']:
     builder = env['BUILDERS'][target_builder]
     base_emitter = builder.emitter
     new_emitter = SCons.Builder.ListEmitter([base_emitter, init_no_global_libdeps_tag_emitter])
