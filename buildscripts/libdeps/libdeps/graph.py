@@ -26,6 +26,8 @@ Libdeps Graph Enums.
 
 These are used for attributing data across the build scripts and analyzer scripts.
 """
+from enum import Enum, auto
+import json
 
 import networkx
 
@@ -33,9 +35,6 @@ try:
     import progressbar
 except ImportError:
     pass
-
-import json
-from enum import Enum, auto
 
 
 # We need to disable invalid name here because it break backwards compatibility with
@@ -105,11 +104,13 @@ class LibdepsGraph(networkx.DiGraph):
     def __init__(self, graph=networkx.DiGraph()):
         """Load the graph data."""
         super().__init__(incoming_graph_data=graph)
+        self._progressbar = None
+        self._deptypes = None
 
     def get_deptype(self, deptype):
         """Convert graphs deptypes from json string to dict, and return requested value."""
 
-        if not hasattr(self, '_deptypes'):
+        if not self._deptypes:
             self._deptypes = json.loads(self.graph.get('deptypes', "{}"))
             if self.graph['graph_schema_version'] == 1:
                 # get and set the legacy values
@@ -152,9 +153,8 @@ class LibdepsGraph(networkx.DiGraph):
         if value is None:
             value = ('progressbar' in globals())
 
-        if hasattr(self, '_progressbar'):
-            if self._progressbar:
-                return self._progressbar
+        if self._progressbar:
+            return self._progressbar
 
         if value:
 

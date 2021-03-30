@@ -50,6 +50,8 @@ class UnsupportedAnalyzer(Exception):
 
 # https://stackoverflow.com/a/25959545/1644736
 def get_class_that_defined_method(meth):
+    """Get the name of the class for given function."""
+
     if isinstance(meth, functools.partial):
         return get_class_that_defined_method(meth.func)
     if inspect.ismethod(meth) or (inspect.isbuiltin(meth)
@@ -129,6 +131,8 @@ class Analyzer:
         return self.rgraph
 
     def get_deptype(self, deptype):
+        """Call down to loaded graph to get the deptype from name."""
+
         return int(self._dependents_graph.get_deptype(deptype))
 
     def _strip_build_dir(self, node):
