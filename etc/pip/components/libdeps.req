@@ -5,3 +5,4 @@ flask_cors
 lxml
 eventlet
 gevent
+progressbar2

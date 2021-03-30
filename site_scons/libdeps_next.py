@@ -55,9 +55,20 @@ from collections import defaultdict
 from functools import partial
 import enum
 import copy
+import json
 import os
 import sys
+import glob
 import textwrap
+import hashlib
+import json
+import fileinput
+
+try:
+    import networkx
+    from buildscripts.libdeps.libdeps.graph import EdgeProps, NodeProps, LibdepsGraph
+except ImportError:
+    pass
 
 import SCons.Errors
 import SCons.Scanner
@@ -948,7 +959,6 @@ def _get_node_with_ixes(env, node, node_builder_type):
 _get_node_with_ixes.node_type_ixes = dict()
 
 def add_node_from(env, node):
-    from buildscripts.libdeps.libdeps.graph import NodeProps
 
     env.GetLibdepsGraph().add_nodes_from([(
         str(node.abspath),
@@ -958,7 +968,6 @@ def add_node_from(env, node):
         })])
 
 def add_edge_from(env, depender_node, dependent_node, visibility, direct):
-    from buildscripts.libdeps.libdeps.graph import EdgeProps
 
     env.GetLibdepsGraph().add_edges_from([(
         dependent_node,
@@ -1184,13 +1193,15 @@ def expand_libdeps_with_flags(source, target, env, for_signature):
 
 def generate_libdeps_graph(env):
     if env.get('SYMBOLDEPSSUFFIX', None):
-        import glob
-        find_symbols = env.Dir("$BUILD_DIR").path + "/libdeps/find_symbols"
 
-        env.GetLibdepsGraph().graph['invocation'] = " ".join([env['ESCAPE'](str(sys.executable))] + [env['ESCAPE'](arg) for arg in sys.argv])
-        env.GetLibdepsGraph().graph['git_hash'] = env['MONGO_GIT_HASH']
-        env.GetLibdepsGraph().graph['graph_schema_version'] = env['LIBDEPS_GRAPH_SCHEMA_VERSION']
-        env.GetLibdepsGraph().graph['build_dir'] = env.Dir('$BUILD_DIR').path
+        find_symbols = env.Dir("$BUILD_DIR").path + "/libdeps/find_symbols"
+        libdeps_graph = env.GetLibdepsGraph()
+        libdeps_graph.graph['invocation'] = " ".join([env['ESCAPE'](str(sys.executable))] + [env['ESCAPE'](arg) for arg in sys.argv])
+        libdeps_graph.graph['git_hash'] = env['MONGO_GIT_HASH']
+        libdeps_graph.graph['graph_schema_version'] = env['LIBDEPS_GRAPH_SCHEMA_VERSION']
+        libdeps_graph.graph['build_dir'] = env.Dir('$BUILD_DIR').path
+        libdeps_graph.graph['deptypes'] = json.dumps({key: value[0] for key, value in deptype.__members__.items() if isinstance(value, tuple)})
+
 
         symbol_deps = []
         for target, source in env.get('LIBDEPS_SYMBOL_DEP_FILES', []):
@@ -1228,9 +1239,7 @@ def generate_libdeps_graph(env):
                     "Generating $SOURCE symbol dependencies" if not env['VERBOSE'] else "")))
 
         def write_graph_hash(env, target, source):
-            import networkx
-            import hashlib
-            import json
+
             with open(target[0].path, 'w') as f:
                 json_str = json.dumps(networkx.readwrite.json_graph.node_link_data(env.GetLibdepsGraph()), sort_keys=True).encode('utf-8')
                 f.write(hashlib.sha256(json_str).hexdigest())
@@ -1253,7 +1262,7 @@ def generate_libdeps_graph(env):
                 generate_graph,
                 {"cmdstr": "Generating libdeps graph"}))
 
-        env.Depends(graph_node, graph_hash)
+        env.Depends(graph_node, [graph_hash] + env.Glob("#buildscripts/libdeps/libdeps/*"))
 
 def get_typeinfo_link_command():
     if LibdepLinter.skip_linting:
@@ -1309,10 +1318,8 @@ def get_libdeps_ld_path(source, target, env, for_signature):
 
 
 def generate_graph(env, target, source):
-    import fileinput
-    import networkx
-    import json
-    from buildscripts.libdeps.libdeps.graph import EdgeProps, NodeProps
+
+    libdeps_graph = env.GetLibdepsGraph()
 
     for symbol_deps_file in source:
         with open(str(symbol_deps_file)) as f:
@@ -1330,15 +1337,17 @@ def generate_graph(env, target, source):
 
             for lib in symbols:
 
-                env.GetLibdepsGraph().add_edges_from([(
+                libdeps_graph.add_edges_from([(
                     os.path.abspath(lib).strip(),
                     os.path.abspath(str(symbol_deps_file)[:-len(env['SYMBOLDEPSSUFFIX'])]),
                     {EdgeProps.symbols.name: " ".join(symbols[lib]) })])
                 node = env.File(str(symbol_deps_file)[:-len(env['SYMBOLDEPSSUFFIX'])])
                 add_node_from(env, node)
 
+    libdeps_graph.calculate_transitive_redundancy()
+
     libdeps_graph_file = f"{env.Dir('$BUILD_DIR').path}/libdeps/libdeps.graphml"
-    networkx.write_graphml(env.GetLibdepsGraph(), libdeps_graph_file, named_key_ids=True)
+    networkx.write_graphml(libdeps_graph, libdeps_graph_file, named_key_ids=True)
     with fileinput.FileInput(libdeps_graph_file, inplace=True) as file:
         for line in file:
             print(line.replace(str(env.Dir("$BUILD_DIR").abspath + os.sep), ''), end='')
@@ -1399,7 +1408,6 @@ def setup_environment(env, emitting_shared=False, debug='off', linting='on', san
         "${BUILD_DIR}/libdeps/libdeps.graphml")[0]
 
     if str(env['LIBDEPS_GRAPH_ALIAS']) in COMMAND_LINE_TARGETS:
-        import networkx
 
         # Detect if the current system has the tools to perform the generation.
         if env.GetOption('ninja') != 'disabled':
@@ -1435,14 +1443,14 @@ def setup_environment(env, emitting_shared=False, debug='off', linting='on', san
             symbol_deps.append(symbol_deps_file)
         env.AddMethod(append_symbol_deps, "AppendSymbolDeps")
 
-        libdeps_graph = networkx.DiGraph()
+        libdeps_graph = LibdepsGraph()
         def get_libdeps_graph(env):
             return libdeps_graph
         env.AddMethod(get_libdeps_graph, "GetLibdepsGraph")
 
         env['LIBDEPS_SYMBOL_DEP_FILES'] = symbol_deps
         env['LIBDEPS_GRAPH_FILE'] = env.File("${BUILD_DIR}/libdeps/libdeps.graphml")
-        env['LIBDEPS_GRAPH_SCHEMA_VERSION'] = 1
+        env['LIBDEPS_GRAPH_SCHEMA_VERSION'] = 2
         env["SYMBOLDEPSSUFFIX"] = '.symbol_deps'
 
         # Now we will setup an emitter, and an additional action for several
