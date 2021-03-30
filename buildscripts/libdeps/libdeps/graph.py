@@ -34,7 +34,6 @@ try:
 except ImportError:
     pass
 
-
 import json
 from enum import Enum, auto
 
@@ -93,6 +92,7 @@ class NodeProps(Enum):
     shim = auto()
     bin_type = auto()
 
+
 def null_progressbar(items):
     """Fake stand-in for normal progressbar."""
     for item in items:
@@ -107,6 +107,8 @@ class LibdepsGraph(networkx.DiGraph):
         super().__init__(incoming_graph_data=graph)
 
     def get_deptype(self, deptype):
+        """Convert graphs deptypes from json string to dict, and return requested value."""
+
         if not hasattr(self, '_deptypes'):
             self._deptypes = json.loads(self.graph.get('deptypes', "{}"))
             if self.graph['graph_schema_version'] == 1:
@@ -119,14 +121,13 @@ class LibdepsGraph(networkx.DiGraph):
 
         return self._deptypes[deptype]
 
-
     def get_direct_nonprivate_graph(self):
         """Get a graph view of direct nonprivate edges."""
 
         def filter_direct_nonprivate_edges(n1, n2):
-            return (self[n1][n2].get(EdgeProps.direct.name)
-                    and (self[n1][n2].get(EdgeProps.visibility.name) == self.get_deptype('Public')
-                         or self[n1][n2].get(EdgeProps.visibility.name) == self.get_deptype('Interface')))
+            return (self[n1][n2].get(EdgeProps.direct.name) and
+                    (self[n1][n2].get(EdgeProps.visibility.name) == self.get_deptype('Public') or
+                     self[n1][n2].get(EdgeProps.visibility.name) == self.get_deptype('Interface')))
 
         return networkx.subgraph_view(self, filter_edge=filter_direct_nonprivate_edges)
 
@@ -149,7 +150,7 @@ class LibdepsGraph(networkx.DiGraph):
         """
 
         if value is None:
-            value = 'progressbar' in globals()
+            value = ('progressbar' in globals())
 
         if hasattr(self, '_progressbar'):
             if self._progressbar:
@@ -211,7 +212,7 @@ class LibdepsGraph(networkx.DiGraph):
         # opposed to the dependents_graph because in a subtree you may not calculate the maximum
         # number of paths for a given node, disallowing you to skip nodes.
         for target_node in self.get_progress()('Calculating Transitive Redundancy: ',
-                                             list(networkx.topological_sort(dependency_graph))):
+                                               list(networkx.topological_sort(dependency_graph))):
 
             if target_node in nodes_checked:
                 continue

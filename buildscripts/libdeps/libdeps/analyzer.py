@@ -41,18 +41,20 @@ import networkx
 
 from libdeps.graph import CountTypes, DependsReportTypes, LinterTypes, EdgeProps, NodeProps
 
+
 class UnsupportedAnalyzer(Exception):
     """Thrown when an analyzer is run on a graph with an unsupported schema."""
 
     pass
+
 
 # https://stackoverflow.com/a/25959545/1644736
 def get_class_that_defined_method(meth):
     if isinstance(meth, functools.partial):
         return get_class_that_defined_method(meth.func)
     if inspect.ismethod(meth) or (inspect.isbuiltin(meth)
-                                    and getattr(meth, '__self__', None) is not None
-                                    and getattr(meth.__self__, '__class__', None)):
+                                  and getattr(meth, '__self__', None) is not None
+                                  and getattr(meth.__self__, '__class__', None)):
         for cls in inspect.getmro(meth.__self__.__class__):
             if meth.__name__ in cls.__dict__:
                 return cls
@@ -283,7 +285,8 @@ class PrivateEdgeCounter(Counter):
     def run(self):
         """Count the graphs private edges."""
 
-        return self.number_of_edge_types(EdgeProps.visibility.name, int(self.get_deptype('Private')))
+        return self.number_of_edge_types(EdgeProps.visibility.name, int(
+            self.get_deptype('Private')))
 
 
 class InterfaceEdgeCounter(Counter):
@@ -299,7 +302,8 @@ class InterfaceEdgeCounter(Counter):
     def run(self):
         """Count the graphs interface edges."""
 
-        return self.number_of_edge_types(EdgeProps.visibility.name, int(self.get_deptype('Interface')))
+        return self.number_of_edge_types(EdgeProps.visibility.name,
+                                         int(self.get_deptype('Interface')))
 
 
 class ShimCounter(Counter):
@@ -500,9 +504,8 @@ class GraphPaths(Analyzer):
 
         if DependsReportTypes.GRAPH_PATHS.name not in report:
             report[DependsReportTypes.GRAPH_PATHS.name] = {}
-        report[DependsReportTypes.GRAPH_PATHS.name][tuple(
-            [self._source_node,
-             self._target_node])] = self.run()
+        report[DependsReportTypes.GRAPH_PATHS.name][tuple([self._source_node,
+                                                           self._target_node])] = self.run()
 
 
 class CriticalEdges(Analyzer):
@@ -620,7 +623,8 @@ class UnusedPublicLinter(Analyzer):
                 edge_attribs = self._dependents_graph[original_node][depender]
 
                 if (edge_attribs.get(EdgeProps.visibility.name) == int(self.get_deptype('Public'))
-                        or edge_attribs.get(EdgeProps.visibility.name) == int(self.get_deptype('Interface'))):
+                        or edge_attribs.get(EdgeProps.visibility.name) == int(
+                            self.get_deptype('Interface'))):
                     if not edge_attribs.get(EdgeProps.symbols.name):
                         if not self._tree_uses_no_symbols(depender, original_nodes, checked_edges):
                             return False
@@ -674,8 +678,8 @@ class UnusedPublicLinter(Analyzer):
         for edge in self._dependents_graph.edges:
             edge_attribs = self._dependents_graph[edge[0]][edge[1]]
 
-            if (edge_attribs.get(EdgeProps.direct.name)
-                    and edge_attribs.get(EdgeProps.visibility.name) == int(self.get_deptype('Public'))
+            if (edge_attribs.get(EdgeProps.direct.name) and edge_attribs.get(
+                    EdgeProps.visibility.name) == int(self.get_deptype('Public'))
                     and not self._dependents_graph.nodes()[edge[0]].get(NodeProps.shim.name)
                     and self._dependents_graph.nodes()[edge[1]].get(
                         NodeProps.bin_type.name) == 'SharedLibrary'):
@@ -846,8 +850,10 @@ class GaPrettyPrinter(GaPrinter):
         if DependsReportTypes.GRAPH_PATHS.name in results:
             print("\nDependency graph paths:")
             for nodes in results[DependsReportTypes.GRAPH_PATHS.name]:
-                self._print_results_node_list(f"=>start node: {nodes[0]}, end node: {nodes[1]}:",
-                                              [f"{' -> '.join(path)}" for path in results[DependsReportTypes.GRAPH_PATHS.name][nodes]])
+                self._print_results_node_list(f"=>start node: {nodes[0]}, end node: {nodes[1]}:", [
+                    f"{' -> '.join(path)}"
+                    for path in results[DependsReportTypes.GRAPH_PATHS.name][nodes]
+                ])
 
         if DependsReportTypes.CRITICAL_EDGES.name in results:
             print("\nCritical Edges:")

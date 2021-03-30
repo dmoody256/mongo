@@ -59,7 +59,7 @@ def get_mock_graph():
     graph = LibdepsGraph()
     graph.graph['build_dir'] = '.'
     graph.graph['graph_schema_version'] = 2
-    graph.graph['deptypes'] ='''{
+    graph.graph['deptypes'] = '''{
         "Global": 0,
         "Public": 1,
         "Private": 2,
@@ -136,10 +136,8 @@ class Tests(unittest.TestCase):
 
         expected_result = {
             "GRAPH_PATHS": {
-                "('lib6.so', 'lib1.so')": [
-                    ['lib6.so', 'lib4.so', 'lib2.so', 'lib1.so'],
-                    ['lib6.so', 'lib3.so', 'lib2.so', 'lib1.so']
-                ]
+                "('lib6.so', 'lib1.so')": [['lib6.so', 'lib4.so', 'lib2.so', 'lib1.so'],
+                                           ['lib6.so', 'lib3.so', 'lib2.so', 'lib1.so']]
             }
         }
 
@@ -158,11 +156,7 @@ class Tests(unittest.TestCase):
         printer = libdeps.analyzer.GaJsonPrinter(ga)
 
         expected_result = {
-            "GRAPH_PATHS": {
-                "('lib5.so', 'lib2.so')": [
-                    ['lib5.so', 'lib3.so', 'lib2.so']
-                ]
-            }
+            "GRAPH_PATHS": {"('lib5.so', 'lib2.so')": [['lib5.so', 'lib3.so', 'lib2.so']]}
         }
 
         self.assertEqual(expected_result, json.loads(printer.get_json()))
