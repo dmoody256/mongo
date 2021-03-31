@@ -1196,11 +1196,7 @@ def generate_libdeps_graph(env):
 
         find_symbols = env.Dir("$BUILD_DIR").path + "/libdeps/find_symbols"
         libdeps_graph = env.GetLibdepsGraph()
-        libdeps_graph.graph['invocation'] = " ".join([env['ESCAPE'](str(sys.executable))] + [env['ESCAPE'](arg) for arg in sys.argv])
-        libdeps_graph.graph['git_hash'] = env['MONGO_GIT_HASH']
-        libdeps_graph.graph['graph_schema_version'] = env['LIBDEPS_GRAPH_SCHEMA_VERSION']
-        libdeps_graph.graph['build_dir'] = env.Dir('$BUILD_DIR').path
-        libdeps_graph.graph['deptypes'] = json.dumps({key: value[0] for key, value in deptype.__members__.items() if isinstance(value, tuple)})
+
 
 
         symbol_deps = []
@@ -1443,15 +1439,21 @@ def setup_environment(env, emitting_shared=False, debug='off', linting='on', san
             symbol_deps.append(symbol_deps_file)
         env.AddMethod(append_symbol_deps, "AppendSymbolDeps")
 
-        libdeps_graph = LibdepsGraph()
-        def get_libdeps_graph(env):
-            return libdeps_graph
-        env.AddMethod(get_libdeps_graph, "GetLibdepsGraph")
-
         env['LIBDEPS_SYMBOL_DEP_FILES'] = symbol_deps
         env['LIBDEPS_GRAPH_FILE'] = env.File("${BUILD_DIR}/libdeps/libdeps.graphml")
         env['LIBDEPS_GRAPH_SCHEMA_VERSION'] = 2
         env["SYMBOLDEPSSUFFIX"] = '.symbol_deps'
+
+        libdeps_graph = LibdepsGraph()
+        libdeps_graph.graph['invocation'] = " ".join([env['ESCAPE'](str(sys.executable))] + [env['ESCAPE'](arg) for arg in sys.argv])
+        libdeps_graph.graph['git_hash'] = env['MONGO_GIT_HASH']
+        libdeps_graph.graph['graph_schema_version'] = env['LIBDEPS_GRAPH_SCHEMA_VERSION']
+        libdeps_graph.graph['build_dir'] = env.Dir('$BUILD_DIR').path
+        libdeps_graph.graph['deptypes'] = json.dumps({key: value[0] for key, value in deptype.__members__.items() if isinstance(value, tuple)})
+
+        def get_libdeps_graph(env):
+            return libdeps_graph
+        env.AddMethod(get_libdeps_graph, "GetLibdepsGraph")
 
         # Now we will setup an emitter, and an additional action for several
         # of the builder involved with dynamic builds.

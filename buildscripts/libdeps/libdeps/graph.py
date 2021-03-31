@@ -27,6 +27,7 @@ Libdeps Graph Enums.
 These are used for attributing data across the build scripts and analyzer scripts.
 """
 from enum import Enum, auto
+from pathlib import Path
 import json
 
 import networkx
@@ -83,6 +84,7 @@ class EdgeProps(Enum):
     visibility = auto()
     symbols = auto()
     transitive_redundancy = auto()
+    transitive_critical_edges = auto()
 
 
 class NodeProps(Enum):
@@ -121,6 +123,11 @@ class LibdepsGraph(networkx.DiGraph):
                 self._deptypes['Typeinfo'] = self._deptypes.get('Typeinfo', 4)
 
         return self._deptypes[deptype]
+
+    def _strip_build_dir(self, node):
+        """Small util function for making args match the graph paths."""
+
+        return str(Path(node).resolve().relative_to(Path(self.graph['build_dir']).resolve()))
 
     def get_direct_nonprivate_graph(self):
         """Get a graph view of direct nonprivate edges."""
@@ -173,6 +180,24 @@ class LibdepsGraph(networkx.DiGraph):
 
         return self._progressbar
 
+    @staticmethod
+    def common_edges_in_paths(paths):
+        common_edge_counts = {}
+        for nodes in paths:
+            for from_node, to_node in zip(nodes[:-1], nodes[1:]):
+                nodes_tuple = tuple([from_node, to_node])
+                if nodes_tuple not in common_edge_counts:
+                    common_edge_counts[nodes_tuple] = 1
+                else:
+                    common_edge_counts[nodes_tuple] += 1
+
+        common_edges = []
+        for nodes, count in common_edge_counts.items():
+            if count == len(paths):
+                common_edges.append(nodes)
+
+        return common_edges
+
     def calculate_transitive_redundancy(self):
         """
         Walk the graph and determine the transitive redundancy.
@@ -222,14 +247,16 @@ class LibdepsGraph(networkx.DiGraph):
             # root node DAG.
             dependency_tree = direct_nonprivate_dependency_graph.get_node_tree(target_node)
             dependents_tree = networkx.reverse_view(dependency_tree)
+            #print(f"starting bridge search for graph of {len(dependency_tree.nodes)} and {len(dependency_tree.edges)}")
+            bridges = [(self._strip_build_dir(bridge[0]), self._strip_build_dir(bridge[1])) for bridge in networkx.bridges(dependency_tree.to_undirected())]
 
             source_nodes = list(networkx.topological_sort(dependency_tree))
-            paths = {node: 0 for node in source_nodes}
-            paths[source_nodes[0]] = 1
+            numpaths = {node: 0 for node in source_nodes}
+            numpaths[source_nodes[0]] = 1
 
             for source_node in source_nodes:
                 for successor in dependents_tree[source_node]:
-                    paths[source_node] += paths[successor]
+                    numpaths[source_node] += numpaths[successor]
 
             # Here is step 3 from above, we have all the paths calculated for all nodes
             # to the root target node, and also all nodes down the tree. This double for
@@ -240,5 +267,8 @@ class LibdepsGraph(networkx.DiGraph):
                     if (self[trans_source_node].get(trans_target_node) and
                             not self[trans_source_node][trans_target_node][EdgeProps.direct.name]):
                         self[trans_source_node][trans_target_node][
-                            EdgeProps.transitive_redundancy.name] = paths[trans_source_node]
+                            EdgeProps.transitive_redundancy.name] = numpaths[trans_source_node]
+                        self[trans_source_node][trans_target_node][
+                            EdgeProps.transitive_critical_edges.name] = json.dumps(bridges)
+                        #print(f"{trans_source_node}, {trans_target_node} is {numpaths[trans_source_node]}")
                 nodes_checked.add(trans_source_node)

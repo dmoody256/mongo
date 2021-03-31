@@ -591,10 +591,14 @@ class PublicWeights(Analyzer):
             for top_node in top_nodes:
                 for bot_node in bot_nodes:
                     if (self._dependents_graph[bot_node].get(top_node) and
-                            not self._dependents_graph[bot_node][top_node][EdgeProps.direct.name]
-                            and self._dependents_graph[bot_node][top_node].get(
+                            not self._dependents_graph[bot_node][top_node][EdgeProps.direct.name]):
+                        if (self._dependents_graph[bot_node][top_node].get(
                                 EdgeProps.transitive_redundancy.name) == 1):
-                        count += 1
+                            pass# count += 1
+                        else:
+                            bridges = json.loads(self._dependents_graph[bot_node][top_node].get(EdgeProps.transitive_critical_edges.name, "[]"))
+                            if [edge[1], edge[0]] in bridges or [edge[0], edge[1]] in bridges:
+                                count += 1
 
             edge_counts.append((count, edge))
 
