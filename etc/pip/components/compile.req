@@ -4,3 +4,4 @@ psutil
 regex
 requirements_parser
 setuptools
+lz4

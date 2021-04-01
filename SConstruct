@@ -466,6 +466,12 @@ add_option('cache-dir',
     help='Specify the directory to use for caching objects if --cache is in use',
 )
 
+add_option('cache-signature-mode',
+    choices=['none', 'validate'],
+    default="none",
+    help='Extra check to validate integrity of cache files after pulling from cache',
+)
+
 add_option("cxx-std",
     choices=["17"],
     default="17",
@@ -1191,6 +1197,13 @@ if get_option('build-tools') == 'next':
 
 env = Environment(variables=env_vars, **envDict)
 del envDict
+
+if get_option('cache-signature-mode') == 'validate':
+    validate_cache_dir = Tool('validate_cache_dir')
+    if validate_cache_dir.exists(env):
+        validate_cache_dir(env)
+    else:
+        env.FatalError("Failed to enable validare_cache_dir tool.")
 
 # Only print the spinner if stdout is a tty
 if sys.stdout.isatty():
