@@ -108,6 +108,7 @@
 
 ## Making source changes
 ### Adding a new dependency
+
 ### Linting and Lint Targets
 #### What lint targets are available?
 #### Using `clang-format`
@@ -141,12 +142,31 @@
 #### Adding a new module
 ### `LIBDEPS` and the `LIBDEPS` Linter
 #### Why `LIBDEPS`?
-#### `LIBDEPS` vs `LIBDEPS_PRIVATE vs LIBDEPS_INTERFACE`
-#### Reverse edges with `DEPS_DEPENDENTS`
+Libdeps is a subsystem within the build, which is centered around the LIBrary DEPendency graph. It tracks and maintains the dependency graph as well as lints, analyzes and provides useful metrics about the graph.
+#### Different `LIBDEPS` variable types
+The LIBDEPS variables are how the library relationships are defined within the build scripts. The primary variables are as follows:
+* `LIBDEPS`
+  The 'public' type which propagates lower level dependencies onward automatically.
+* `LIBDEPS_PRIVATE`
+  Creates a dependency only between the target and the dependency.
+* `LIBDEPS_INTERFACE`
+  Same as `LIBDEPS` but excludes itself from the propagation onward.
+* `LIBDEPS_DEPENDENTS`
+  Creates a reverse `LIBDEPS_PRIVATE` dependency where the dependency is the one declaring the relationship.
+* `PROGDEPS_DEPENDENTS`
+  Same as `LIBDEPS_DEPENDENTS` but for use with Program builders.
+
+Libraries are added to these variables as lists per each SCons builder instance in the SConscripts depending on what type of relationship is needed. For more detailed information on theses types, refer to [`The LIBDEPS variables`](build_system_reference.md#the-libdeps-variables)
 #### The `LIBDEPS` lint rules and tags
+The libdeps subsystem is capable of linting and automatically detecting issues. Some of these linting rules are automatically checked during build time while others need to be manually run post build. Some rules will include exemption tags which can be added to a libraries `LIBDEPS_TAGS` to override a rule for that library.
+
+For a complete list of build time lint rules and tags, please refer to [`Build-time Libdeps Linter`](build_system_reference.md#build-time-libdeps-linter)
 #### `LIBDEPS_TAGS`
-##### `init-no-global-side-effects`
-#### Using the LIBDEPS Linter
+`LIBDEPS_TAGS` can also be used to supply flags to the libdeps subsystem to do special handling for certain libraries.
+##### The `init-no-global-side-effects` tag
+Adding this flag to a library turns on platform specific compiler flags which will cause the linker to pull in just the symbols it needs. Note that by default, the build is configured to pull in all symbols from libraries because of the use of static initializers, however if a library is known to not have any of these initializers, then this flag can be added for some performance improvement.
+#### Using the post build LIBDEPS Linter
+The build time linter is on by default, but the post build linter is to be used manually. First, you must build the libdeps dependency graph by building the `generate-libdeps-graph` target. After the graph file is created, it can be used as input into the `gacli` tool to perform linting and analysis on the complete dependency graph. For more information about the details of using the post build linting tools refer to [`Post build linting and analysis`](build_system_reference.md#post-build-linting-and-analysis)
 ### Debugging build system failures
 #### Using` -k` and `-n`
 #### `--debug=[explain, time, stacktrace]`
