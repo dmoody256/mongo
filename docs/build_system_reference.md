@@ -20,30 +20,34 @@
 ### LIBDEPS
 Libdeps is a subsystem within the build, which is centered around the LIBrary DEPendency graph. It tracks and maintains the dependency graph as well as lints, analyzes and provides useful metrics about the graph.
 #### Design
-The libdeps subsystem is divided into several components described as follows.
+The libdeps subsystem is divided into several stages, described in order of use as follows.
 
-##### SConscript `LIBDEPS` definitions and linting
+##### SConscript `LIBDEPS` definitions and built time linting
 
-During the build, the SConscripts are read and all the library relationships are setup via the `LIBDEPS` variables. Some issues can be identified early during processing of the SConscripts via the build time linter. Most of the issues found during this phase will be will be style and usage issues which can be realized without needing the full graph. This component lives within the build, and is executed through the SCons emitters added via the libdeps subsystem.
+During the build, the SConscripts are read and all the library relationships are setup via the `LIBDEPS` variables. Some issues can be identified early during processing of the SConscripts via the build-time linter. Most of these will be style and usage issues which can be realized without needing the full graph. This component lives within the build and is executed through the SCons emitters added via the libdeps subsystem.
 
-##### Libdeps graph generation
+##### Libdeps graph generation for post-build analysis
 
-For more advanced analysis and linting, a full graph is necessary. The build has a special target, `generate-libdeps-graph`, which builds all libdeps and items which use libdeps, and then generates a graph file representing this library dependency graph. The graph is then used as input to the libdeps analyzer python module and performs graph analysis via the command line interface tool `gacli.py` or the visualizer web service.
+For more advanced analysis and linting, a full graph is necessary. The build target `generate-libdeps-graph` builds all libdeps and things which use libdeps, and generates the graph to a file in graphml format.
 
 ##### The libdeps analyzer python module
 
-The libdeps analyzer module is a python library which takes in a generated graph. The library leverages the networkx python module for most of the generic graph interfaces, and provides an library dependency analyzer interface for linting and analyzing the graph.
+The libdeps analyzer module is a python library which provides and Application Programming Interface (API) analyze and lint the graph. The library internally leverages the networkx python module for most of the generic graph interfaces.
 
 ##### The CLI and Visualizer tools
 
-The generated graph file also feeds into several tools, the libdeps Graph Analysis Command Line Interface (gacli) tool and the libdeps Graph Visualizer web service. Both tools use the libdeps analyzer python module for performing analysis on given graph data.
+The libdeps analyzer module is used in the libdeps Graph Analysis Command Line Interface (gacli) tool and the libdeps Graph Visualizer web service. Both tools read in the graph file generated from the build and provide the Human Machine Interface (HMI) for analysis and linting.
 #### The `LIBDEPS` variables
 The variables include several types of lists to be added to libraries per a SCons builder instance:
-* `LIBDEPS`
-* `LIBDEPS_PRIVATE`
-* `LIBDEPS_INTERFACE`
-* `LIBDEPS_DEPENDENTS`
-* `PROGDEPS_DEPENDENTS`
+
+| Variable        | Use           |
+| ------------- |-------------|
+| `LIBDEPS`      | transitive dependencies  |
+| `LIBDEPS_PRIVATE`    |   local dependency    |
+| `LIBDEPS_INTERFACE` | transitive dependencies excluding self      |
+| `LIBDEPS_DEPENDENTS` | reverse dependency |
+| `PROGDEPS_DEPENDENTS` | reverse dependency for Programs |
+
 
 _`LIBDEPS`_ is the 'public' type, such that libraries that are added to this list become a dependency of the current library, and also become dependencies of libraries which may depend on the current library. This propagation also includes not just the libraries in the `LIBDEPS` list, but all `LIBDEPS` of those `LIBDEPS` recursively, meaning that all dependencies of the `LIBDEPS` libraries, also become dependencies of the current library and libraries which depend on it.
 
@@ -51,15 +55,40 @@ _`LIBDEPS_PRIVATE`_ should be a list of libraries which creates dependencies onl
 
 _`LIBDEPS_INTERFACE`_ is very similar to `LIBDEPS`, however it does not create a propagating dependency for the libraries themselves in the `LIBDEPS_INTERFACE` list. Only the dependencies of those `LIBDEPS_INTERFACE` libraries are propagated forward.
 
-_`LIBDEPS_DEPENDENTS`_ are added to libraries which will force themselves as dependencies of the libraries in the supplied list. This is conceptually a reverse dependency, where the library which is a dependency is the one declaring itself as the dependency of some other library. By default this create a LIBDEPS_PRIVATE like relationship, but a tuple can be used to force it to a `LIBDEPS` like or other relationship.
+_`LIBDEPS_DEPENDENTS`_ are added to libraries which will force themselves as dependencies of the libraries in the supplied list. This is conceptually a reverse dependency, where the library which is a dependency is the one declaring itself as the dependency of some other library. By default this creates a `LIBDEPS_PRIVATE` like relationship, but a tuple can be used to force it to a `LIBDEPS` like or other relationship.
 
 _`PROGDEPS_DEPENDENTS`_ are the same as `LIBDEPS_DEPENDENTS`, but intended for use only with Program builders.
+
+#### `LIBDEPS_TAGS`
+The `LIBDEPS_TAGS` variable is used to mark certain libdeps for various reasons. Some `LIBDEPS_TAGS` are used to mark certain libraries for `LIBDEPS_TAG_EXPANSIONS` variable which is used to create a function which can expand to a string on the command line. Below is a table of available `LIBDEPS` tags:
+
+| Tag | Description |
+|---|---|
+| `illegal_cyclic_or_unresolved_dependencies_whitelisted` | SCons subst expansion tag to handle dependency cycles |
+| `init-no-global-side-effects` | SCons subst expansion tag for causing linkers to avoid pulling in all symbols |
+| `lint-public-dep-allowed` | Linting exemption tag exempting the `lint-no-public-deps` tag |
+| `lint-no-public-deps` | Linting inclusion tag ensuring a libdep has no `LIBDEPS` declared |
+| `lint-allow-non-alphabetic` | Linting exemption tag allowing `LIBDEPS` variable lists to be non-alphabetic |
+| `lint-leaf-node-allowed-dep` | Linting exemption tag exempting the `lint-leaf-node-no-deps` tag |
+| `lint-leaf-node-no-deps` | Linting inclusion tag ensuring a libdep has no libdeps and is a leaf node |
+| `lint-allow-nonlist-libdeps` | Linting exemption tag allowing a `LIBDEPS` variable to not be a list | `lint-allow-bidirectional-edges` | Linting exemption tag allowing reverse dependencies to also be a forward dependencies |
+| `lint-allow-nonprivate-on-deps-dependents` | Linting exemption tag allowing reverse dependencies to be transitive |
+| `lint-allow-dup-libdeps` | Linting exemption tag allowing `LIBDEPS` variables to contain duplicate libdeps on a given library |
+| `lint-allow-program-links-private` | Linting exemption tag allowing `Program`s to have `PRIVATE_LIBDEPS` |
+|
+
+##### The `illegal_cyclic_or_unresolved_dependencies_whitelisted` tag
+This tag should not be used anymore because the library dependecy graph has been successfully converted to a Directed Acyclic Graph (DAG). Before this was accomplished it was necessary to handle
+cycles specifically with platform specific options on the command line.
+
+##### The `init-no-global-side-effects` tag
+Adding this flag to a library turns on platform specific compiler flags which will cause the linker to pull in just the symbols it needs. Note that by default, the build is configured to pull in all symbols from libraries because of the use of static initializers, however if a library is known to not have any of these initializers, then this flag can be added for some performance improvement.
 
 #### Linting and linter tags
 
 The libdeps linter features automatically detect certain classes of LIBDEPS usage errors. The libdeps linters are implemented as build-time linting and post-build linting procedures to maintain order in usage of the libdeps tool and the build’s library dependency graph. You will need to comply with the rules enforced by the libdeps linter, and fix issues that it raises when modifying the build scripts. There are exemption tags to prevent the linter from blocking things, however these exemption tags should only be used in extraordinary cases, and with good reason. A goal of the libdeps linter is to drive and maintain the number of exemption tags in use to zero.
 ##### Exemption Tags
-There are a number of existing issues that need to be addressed, but they will be addressed in future tickets. In the meantime, the use of specific strings in the LIBDEPS_TAGS variable can allow the libdeps linter to skip certain issues on certain libraries. You would supply the tag onto the library causing issues. For example, to have the linter skip enforcement of the lint rule against bidirectional edges for "some_library":
+There are a number of existing issues that need to be addressed, but they will be addressed in future tickets. In the meantime, the use of specific strings in the LIBDEPS_TAGS variable can allow the libdeps linter to skip certain issues on given libraries. For example, to have the linter skip enforcement of the lint rule against bidirectional edges for "some_library":
 ```
 env.Library(
     target=’some_library’
@@ -68,8 +97,8 @@ env.Library(
 )
 ```
 
-#### Build-time Libdeps Linter
-If there is a build time issue, the build will fail until it is addressed. The linting feature will be on by default and takes about half a second to complete in a full enterprise build (at the time of writing this), but can be turned off by using the --libdeps-linting=off option on your SCons invocation.
+#### build-time Libdeps Linter
+If there is a build-time issue, the build will fail until it is addressed. The linting feature will be on by default and takes about half a second to complete in a full enterprise build (at the time of writing this), but can be turned off by using the --libdeps-linting=off option on your SCons invocation.
 
 The current rules and there exemptions are listed below:
 
@@ -258,12 +287,12 @@ The current rules and there exemptions are listed below:
 
 
 
-##### The build time print Option
-The libdeps linter also has the --libdeps-linting=print option which will perform linting, and instead of failing the build on an issue, just print and continue on. It will also ignore exemption tags, and still print the issue because it will not fail the build. This is a good way to see the entirety of existing issues that are exempted by tags, as well as printing other metrics such as time spent linting.
+##### The build-time print Option
+The libdeps linter also has the `--libdeps-linting=print` option which will perform linting, and instead of failing the build on an issue, just print and continue on. It will also ignore exemption tags, and still print the issue because it will not fail the build. This is a good way to see the entirety of existing issues that are exempted by tags, as well as printing other metrics such as time spent linting.
 
-#### Post build linting and analysis
+#### post-build linting and analysis
 
-The dependency graph can be analyzed post build by leveraging the completeness of the graph to perform more extensive analysis. You will need to install the libdeps requirements file to python when attempting to use the post build analysis tools:
+The dependency graph can be analyzed post-build by leveraging the completeness of the graph to perform more extensive analysis. You will need to install the libdeps requirements file to python when attempting to use the post-build analysis tools:
 
 ```
 python3 -m pip install -r etc/pip/libdeps-requirements.txt
