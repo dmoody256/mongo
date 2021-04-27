@@ -32,7 +32,7 @@ For more advanced analysis and linting, a full graph is necessary. The build tar
 
 ##### The libdeps analyzer python module
 
-The libdeps analyzer module is a python library which provides and Application Programming Interface (API) analyze and lint the graph. The library internally leverages the networkx python module for most of the generic graph interfaces.
+The libdeps analyzer module is a python library which provides and Application Programming Interface (API) to analyze and lint the graph. The library internally leverages the networkx python module for the generic graph interfaces.
 
 ##### The CLI and Visualizer tools
 
@@ -43,17 +43,17 @@ The variables include several types of lists to be added to libraries per a SCon
 | Variable        | Use           |
 | ------------- |-------------|
 | `LIBDEPS`      | transitive dependencies  |
-| `LIBDEPS_PRIVATE`    |   local dependency    |
+| `LIBDEPS_PRIVATE`    |   local dependencies    |
 | `LIBDEPS_INTERFACE` | transitive dependencies excluding self      |
-| `LIBDEPS_DEPENDENTS` | reverse dependency |
-| `PROGDEPS_DEPENDENTS` | reverse dependency for Programs |
+| `LIBDEPS_DEPENDENTS` | reverse dependencies |
+| `PROGDEPS_DEPENDENTS` | reverse dependencies for Programs |
 
 
 _`LIBDEPS`_ is the 'public' type, such that libraries that are added to this list become a dependency of the current library, and also become dependencies of libraries which may depend on the current library. This propagation also includes not just the libraries in the `LIBDEPS` list, but all `LIBDEPS` of those `LIBDEPS` recursively, meaning that all dependencies of the `LIBDEPS` libraries, also become dependencies of the current library and libraries which depend on it.
 
 _`LIBDEPS_PRIVATE`_ should be a list of libraries which creates dependencies only between the current library and the libraries in the list. However, in static linking builds, this will behave the same as `LIBDEPS` due to the nature of static linking.
 
-_`LIBDEPS_INTERFACE`_ is very similar to `LIBDEPS`, however it does not create a propagating dependency for the libraries themselves in the `LIBDEPS_INTERFACE` list. Only the dependencies of those `LIBDEPS_INTERFACE` libraries are propagated forward.
+_`LIBDEPS_INTERFACE`_ is very similar to `LIBDEPS`, however it does not create propagating dependencies for the libraries themselves in the `LIBDEPS_INTERFACE` list. Only the dependencies of those `LIBDEPS_INTERFACE` libraries are propagated forward.
 
 _`LIBDEPS_DEPENDENTS`_ are added to libraries which will force themselves as dependencies of the libraries in the supplied list. This is conceptually a reverse dependency, where the library which is a dependency is the one declaring itself as the dependency of some other library. By default this creates a `LIBDEPS_PRIVATE` like relationship, but a tuple can be used to force it to a `LIBDEPS` like or other relationship.
 
@@ -75,10 +75,9 @@ The `LIBDEPS_TAGS` variable is used to mark certain libdeps for various reasons.
 | `lint-allow-nonprivate-on-deps-dependents` | Linting exemption tag allowing reverse dependencies to be transitive |
 | `lint-allow-dup-libdeps` | Linting exemption tag allowing `LIBDEPS` variables to contain duplicate libdeps on a given library |
 | `lint-allow-program-links-private` | Linting exemption tag allowing `Program`s to have `PRIVATE_LIBDEPS` |
-|
 
 ##### The `illegal_cyclic_or_unresolved_dependencies_whitelisted` tag
-This tag should not be used anymore because the library dependecy graph has been successfully converted to a Directed Acyclic Graph (DAG). Before this was accomplished it was necessary to handle
+This tag should not be used anymore because the library dependecy graph has been successfully converted to a Directed Acyclic Graph (DAG). Prior to this accomplishment, it was necessary to handle
 cycles specifically with platform specific options on the command line.
 
 ##### The `init-no-global-side-effects` tag
@@ -98,7 +97,7 @@ env.Library(
 ```
 
 #### build-time Libdeps Linter
-If there is a build-time issue, the build will fail until it is addressed. The linting feature will be on by default and takes about half a second to complete in a full enterprise build (at the time of writing this), but can be turned off by using the --libdeps-linting=off option on your SCons invocation.
+If there is a build-time issue, the build will fail until it is addressed. This linting feature will be on by default and takes about half a second to complete in a full enterprise build (at the time of writing this), but can be turned off by using the --libdeps-linting=off option on your SCons invocation.
 
 The current rules and there exemptions are listed below:
 
@@ -298,21 +297,21 @@ The dependency graph can be analyzed post-build by leveraging the completeness o
 python3 -m pip install -r etc/pip/libdeps-requirements.txt
 ```
 
-The command line interface tool (gacli) has a comprehensive help text which will describe the available analysis options and interface. The visualizer tool includes a GUI which displays the available analysis options. These tools will be briefly covered below.
+The command line interface tool (gacli) has a comprehensive help text which will describe the available analysis options and interface. The visualizer tool includes a GUI which displays the available analysis options graphically. These tools will be briefly covered in the following sections.
 
 ##### Generating the graph file
 
-To generate the full graph, build the target `generate-libdeps-graph`. This will build all things involving libdeps and construct a graphml file representing the library dependency graph. The graph can be used in the command line interface tool or the visualizer web service tool. The minimal set of required args to build the graph file is shown below:
+To generate the full graph, build the target `generate-libdeps-graph`. This will build all things involving libdeps and construct a graphml file representing the library dependency graph. The graph can be used in the command line interface tool or the visualizer web service tool. The minimal set of required SCons arguments to build the graph file is shown below:
 
 ```
 python3 buildscripts/scons.py --link-model=dynamic --build-tools=next generate-libdeps-graph
 ```
 
-The target `generate-libdeps-graph` will turn on extra build items to generate the graph. The graph file by default will be generate to `build/opt/libdeps/libdeps.graphml` (where `build/opt` is the `$BUILD_DIR`).
+The graph file by default will be generate to `build/opt/libdeps/libdeps.graphml` (where `build/opt` is the `$BUILD_DIR`).
 
 ##### General libdeps analyzer API usage
 
-The libdeps analyzer API generally is initialized and used like this:
+Below is a basic example of usage of the libdeps analyzer API:
 
 ```
 import libdeps
@@ -328,11 +327,11 @@ analysis_results = libdeps.graph.LibdepsGraphAnalysis(list_of_analysis_to_run)
 libdeps.analyzer.GaPrettyPrinter(analysis_after_run).print()
 ```
 
-There first step is to create a list of Analyzer instances. Some example analyzer classes are instantiated in the example above, but there are many others to choose from. Specific Analyzers have different interfaces and should be supplied an argument list corresponding to that analyzer.
+Walking through this example, first the graph is loaded from file. Then a list of desired Analyzer instances is created. Some example analyzer classes are instantiated in the example above, but there are many others to choose from. Specific Analyzers have different interfaces and should be supplied an argument list corresponding to that analyzer.
 
 _Note:_ The graph file will contain the build dir that the graph data was created with and it expects all node arguments to be relative to the build dir. If you are using the libdeps module generically in some app, you can extract the build dir from the libdeps graph and append it to any generic library path.
 
-Once the list of analyzers is created, they can be used to create a LibdepsGraphAnalysis instance, which will upon instantiation, run the analysis list provided. Once the instance is created, it contains the results, and optionally can be fed into different printer types. In this case, a human readable format printer called GaPrettyPrinter is used to print to the console.
+Once the list of analyzers is created, they can be used to create a LibdepsGraphAnalysis instance, which will upon instantiation, run the analysis list provided. Once the instance is created, it contains the results, and optionally can be fed into different printer classes. In this case, a human readable format printer called GaPrettyPrinter is used to print to the console.
 
 ##### Using the gacli tool
 
