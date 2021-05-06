@@ -19,6 +19,22 @@ timelibSuffix = '-2021.06'
 tomcryptSuffix = '-1.18.2'
 variantSuffix = '-1.4.0'
 
+#env.AppendUnique(
+#    CPPPATH=['#src/third_party']
+#)
+
+#if env.ToolchainIs('msvc'):
+#    pchEnv = env.Clone()
+#    pchEnv['PCHSTOP'] = ''
+#    pchEnv['FORCEINCLUDES'] = []
+#    env['PCH'] = pchEnv.PCH('third_party_pch.h')[0]
+#    env['PCHSTOP'] = 'third_party_pch.h'
+#    env.PrependUnique(
+#        FORCEINCLUDES=[
+#            'third_party_pch.h',
+#        ],
+#    )
+
 thirdPartyEnvironmentModifications = {
    'fmt' : {
         'CPPPATH' : ['#src/third_party/fmt/dist/include'],
@@ -155,7 +171,6 @@ if wiredtiger and not use_system_version_of_library('wiredtiger'):
 if not use_system_version_of_library('yaml'):
     thirdPartyEnvironmentModifications['yaml'] = {
         'CPPPATH' : ['#/src/third_party/yaml-cpp/yaml-cpp/include'],
-        'CPPDEFINES' : ['_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING'] if env.ToolchainIs('msvc') else [],
     }
 
 if not use_system_version_of_library('asio'):
@@ -200,7 +215,10 @@ def injectThirdParty(thisEnv, libraries=[], parts=[]):
             thisEnv.PrependUnique(**mods)
         else:
             for part in parts:
-                thisEnv.PrependUnique({part : mods[part]})
+                if part in mods:
+                    thisEnv.PrependUnique({part : mods[part]})
+                else:
+                    print(f"failed to find {part} in {mods} for lib {lib}")
 
 env.AddMethod(injectThirdParty, 'InjectThirdParty')
 
