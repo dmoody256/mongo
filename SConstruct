@@ -525,6 +525,13 @@ add_option('linker',
     type='choice'
 )
 
+add_option('progress',
+    choices=['spinner', 'count', 'advanced'],
+    default='spinner',
+    help='Specify the type of progress display',
+    type='choice'
+)
+
 variable_parse_mode_choices=['auto', 'posix', 'other']
 add_option('variable-parse-mode',
     choices=variable_parse_mode_choices,
@@ -1219,10 +1226,6 @@ if get_option('cache-signature-mode') == 'validate':
         validate_cache_dir(env)
     else:
         env.FatalError("Failed to enable validate_cache_dir tool.")
-
-# Only print the spinner if stdout is a tty
-if sys.stdout.isatty():
-    Progress(['-\r', '\\\r', '|\r', '/\r'], interval=50)
 
 # We are going to start running conf tests soon, so setup
 # --disable-warnings-as-errors as soon as possible.
@@ -5397,6 +5400,7 @@ with open("resmoke.ini", "w") as resmoke_config:
 install_dir = {install_dir}
 """.format(install_dir=resmoke_install_dir))
 
+
 env.SConscript(
     dirs=[
         'src',
@@ -5475,3 +5479,16 @@ for i, s in enumerate(BUILD_TARGETS):
 if get_option('build-tools') == 'next':
     libdeps.LibdepLinter(env).final_checks()
     libdeps.generate_libdeps_graph(env)
+
+if get_option('progress') == 'count':
+    env['PROGRESS_VERBOSE'] = env.Verbose()
+    env['PROGRESS_CACHE'] = env.Dir("$BUILD_ROOT/scons/progress").abspath
+    env['PROGRESS_CACHE_EXTRA'] = variables_files
+    progress_display = Tool('progress_display')
+    if progress_display.exists(env):
+        progress_display(env)
+
+else:
+    # Only print the spinner if stdout is a tty
+    if sys.stdout.isatty():
+        Progress(['-\r', '\\\r', '|\r', '/\r'], interval=50)
