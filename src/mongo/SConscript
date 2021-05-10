@@ -48,17 +48,17 @@ env.AppendUnique(
     ],
 )
 
-if env.ToolchainIs('msvc'):
-    pchEnv = env.Clone()
-    pchEnv['PCHSTOP'] = ''
-    pchEnv['FORCEINCLUDES'] = []
-    env['PCH'] = pchEnv.PCH('mongo_pch.h')[0]
-    env['PCHSTOP'] = 'mongo/mongo_pch.h'
-    env.PrependUnique(
-        FORCEINCLUDES=[
-            'mongo/mongo_pch.h'
-        ],
-    )
+#if env.ToolchainIs('msvc'):
+#    pchEnv = env.Clone()
+#    pchEnv['PCHSTOP'] = ''
+#    pchEnv['FORCEINCLUDES'] = []
+#    env['PCH'] = pchEnv.PCH('mongo_pch.h')[0]
+#    env['PCHSTOP'] = 'mongo/mongo_pch.h'
+#    env.PrependUnique(
+#        FORCEINCLUDES=[
+#            'mongo/mongo_pch.h'
+#        ],
+#    )
 
 env.SConscript(
     dirs=[
