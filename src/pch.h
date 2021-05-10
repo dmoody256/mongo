@@ -48,5 +48,16 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <algorithm>
+#include <functional>
+#include <iostream>
+#include <cstdint>
+#include <cstddef>
+#include <stdint.h>
+#include <stddef.h>
+#include <type_traits>
+#include <map>
+#include <set>
+#include <limits>
 
 #endif
