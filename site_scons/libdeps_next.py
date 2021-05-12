@@ -820,6 +820,7 @@ def update_scanner(env, builder_name=None, debug=False):
             print(f"  Build dependencies:")
             print('\n'.join(['    * ' + str(t) for t in result]))
             print('\n')
+        print(f"RETURNing {len(result)}")
         return result
 
     builder.target_scanner = SCons.Scanner.Scanner(

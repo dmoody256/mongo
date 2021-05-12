@@ -633,6 +633,9 @@ env.Library(
         '$BUILD_DIR/mongo/db/concurrency/lock_manager',
         '$BUILD_DIR/mongo/util/net/network',
     ],
+    
+    FORCEINCLUDES=[include for include in env.get('FORCEINCLUDES', []) if 'mongo_db_pch.h' not in include],
+    PCH=[]
 )
 
 env.Library(
