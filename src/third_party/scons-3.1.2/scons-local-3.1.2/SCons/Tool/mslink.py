@@ -254,10 +254,19 @@ compositeLdmodAction = ldmodLinkAction + regServerCheck + embedManifestDllCheckA
 exeLinkAction = SCons.Action.Action('${TEMPFILE("$LINK $LINKFLAGS /OUT:$TARGET.windows $_LIBDIRFLAGS $_LIBFLAGS $_PDB $SOURCES.windows", "$LINKCOMSTR")}', '$LINKCOMSTR')
 compositeLinkAction = exeLinkAction + embedManifestExeCheckAction
 
+class FindPchObjs(object):
+    """
+    A class to bind a specific E{*}PATH variable name to a function that
+    will return all of the E{*}path directories.
+    """
+    def __call__(self, env, dir=None, target=None, source=None, argument=None):
+        print(target)
+
 def generate(env):
     """Add Builders and construction variables for ar to an Environment."""
     SCons.Tool.createSharedLibBuilder(env)
-    SCons.Tool.createProgBuilder(env)
+    prog_builder = SCons.Tool.createProgBuilder(env)
+    prog_builder.target_scanner.add_scanner(SCons.Scanner.Base(FindPchObjs, name='PchObjScanner'))
 
     env['SHLINK']      = '$LINK'
     env['SHLINKFLAGS'] = SCons.Util.CLVar('$LINKFLAGS /dll')
