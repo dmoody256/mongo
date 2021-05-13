@@ -9,17 +9,18 @@ Import([
 
 env = env.Clone()
 
-if env.ToolchainIs('msvc'):
-   pchEnv = env.Clone()
-   pchEnv['PCHSTOP'] = ''
-   pchEnv['FORCEINCLUDES'] = []
-   env['PCH'] = pchEnv.PCH('mongo_s_pch.h')[0]
-   env['PCHSTOP'] = 'mongo/s/mongo_s_pch.h'
-   env.PrependUnique(
-       FORCEINCLUDES=[
-           'mongo/s/mongo_s_pch.h'
-       ],
-   )
+# pchEnv = env.Clone()
+# pchEnv['PCHSTOP'] = ''
+# pchEnv['FORCEINCLUDES'] = []
+# env['PCH'] = pchEnv.PCH(target='mongo_s_pch.h'+pchEnv['PCHSUFFIX'], source='mongo_s_pch.h')[0]
+# env['PCHSTOP'] = 'mongo/s/mongo_s_pch.h'
+# env['FORCEINCLUDES'] = env['FORCEINCLUDES'].copy()
+# env['FORCEINCLUDES'].remove('mongo/mongo_pch.h')
+# env.PrependUnique(
+#     FORCEINCLUDES=[
+#         'mongo/s/mongo_s_pch.h'
+#     ],
+# )
 
 
 env.SConscript(

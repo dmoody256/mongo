@@ -63,7 +63,6 @@ def scan(node, env, libpath = ()):
     for libraries specified in the LIBS variable, returning any
     files it finds as dependencies.
     """
-    print("RUNNING PROG SCANNER")
     try:
         libs = env['LIBS']
     except KeyError:

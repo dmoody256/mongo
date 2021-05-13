@@ -27,7 +27,8 @@
  *    it in the license file.
  */
 
-#pragma once
+#ifndef MONGO_PCH_HEADER
+#define MONGO_PCH_HEADER
 
 // This PCH is scoped to all files under src/mongo unless overriden by
 // a subdirectory. Only header files that are applicable to all
@@ -58,4 +59,5 @@
 #include <mongo/db/jsobj.h>
 #include <mongo/db/client.h>
 
+#endif
 #endif

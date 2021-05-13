@@ -5408,45 +5408,9 @@ with open("resmoke.ini", "w") as resmoke_config:
 install_dir = {install_dir}
 """.format(install_dir=resmoke_install_dir))
 
-
-def update_scanner(env, builder):
-    """Update the scanner for "builder" to also scan library dependencies."""
-
-    old_scanner = builder.target_scanner
-    print(f"OLD SCANNER {old_scanner}")
-    if old_scanner:
-        path_function = old_scanner.path_function
-    else:
-        path_function = None
-    print(f"path function {path_function}")
-    def new_scanner(node, env, path=()):
-        if old_scanner:
-            result = old_scanner.function(node, env, path)
-        else:
-            result = []
-
-        pchobjs = set()
-        for lib in result:
-            for child in lib.sources:
-                objsuffix = ""
-
-                if str(child).endswith(child.get_env().get('OBJSUFFIX')):
-                    objsuffix = child.get_env().get('OBJSUFFIX')
-                if str(child).endswith(child.get_env().get('SHOBJSUFFIX')):
-                    objsuffix = child.get_env().get('SHOBJSUFFIX')
-                if objsuffix and child.get_env().get('PCH'):
-                    pchobjs.add(child.get_env().File(SCons.Util.splitext(str(child.get_env().get('PCH')))[0] + objsuffix))
-        print(f"PCH objs: {[str(o) for o in pchobjs]}")
-        env['PCHOBJS'] = list(pchobjs)
-        result += env['PCHOBJS']
-
-        return result
-
-    builder.target_scanner = SCons.Scanner.Scanner(
-        function=new_scanner, path_function=path_function
-    )
-
-update_scanner(env, env['BUILDERS']['Program'])
+pch_tool = Tool('pch')
+if pch_tool.exists(env):
+    pch_tool(env)
 
 env.SConscript(
     dirs=[

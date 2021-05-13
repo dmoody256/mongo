@@ -800,7 +800,7 @@ def update_scanner(env, builder_name=None, debug=False):
     else:
         path_function = None
 
-    def new_scanner(node, env, path=(), old_scanner=None):
+    def new_scanner(node, env, path=()):
         if debug:
             print(f"LIBDEPS SCANNER: {str(node)}")
             print(f"  Declared dependencies:")
@@ -820,7 +820,6 @@ def update_scanner(env, builder_name=None, debug=False):
             print(f"  Build dependencies:")
             print('\n'.join(['    * ' + str(t) for t in result]))
             print('\n')
-        print(f"RETURNing {len(result)}")
         return result
 
     builder.target_scanner = SCons.Scanner.Scanner(

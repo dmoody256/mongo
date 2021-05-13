@@ -27,7 +27,8 @@
  *    it in the license file.
  */
 
-#pragma once
+#ifndef MONGO_DB_PCH_HEADER
+#define MONGO_DB_PCH_HEADER
 
 // This PCH is scoped to all files under src/mongo unless overriden by
 // a subdirectory. Only header files that are applicable to all
@@ -45,4 +46,5 @@
 #include <mongo/db/auth/authorization_session.h>
 #include <mongo/db/db_raii.h>
 
+#endif
 #endif
