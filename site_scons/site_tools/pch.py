@@ -74,7 +74,7 @@ def pch_emitter(target, source, env):
             pch = t
 
     target = [pch] # make compatible with window pch interface
-
+    env.Depends(target, env['PCHCHAIN'])
     return (target, source)
 
 def object_emitter(target, source, env, parent_emitter):
@@ -115,6 +115,13 @@ def pchObjsGenerator(target, source, env, for_signature):
 
     return command_line or ""
 
+def chainPchGenerator(target, source, env, for_signature):
+    command_line = []
+    for pch in env.get('PCHCHAIN', []):
+        command_line += ['-include-pch', pch]
+        #command_line += [pch]
+    print(f"COMMANDLINE: {command_line}")
+    return command_line or ""
 
 def generate(env, **kwargs):
 
@@ -151,9 +158,13 @@ def generate(env, **kwargs):
     #env['CCPCHFLAGS'] = SCons.Util.CLVar(['${(PCH and "/Yu%s \\\"/Fp%s\\\""%(PCHSTOP or "",File(PCH))) or ""}'])
     env['_PCHSUFFIX'] = pchsuffixGen
     env.Append(CXXFLAGS=['-Winvalid-pch'])
-    env['PCHCOM'] = '$CXX $CXXFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCE -o $TARGET'
+    #'$CXX -o $TARGET -c $CXXFLAGS $CCFLAGS $_CCCOMCOM $SOURCES'
+    #env['PCHCOM'] = '$CXX $CXXFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCE -o $TARGET'
+    env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_CHAINPCH'
     env['BUILDERS']['PCH'] = pch_builder
     env['_PCHINCLUDES'] = pchObjsGenerator
+    env['_CHAINPCH'] = chainPchGenerator
+    env['PCHCHAIN'] = []
     #env.Append(LINKFLAGS='$_PCHINCLUDES')
 
 
