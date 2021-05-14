@@ -126,13 +126,13 @@ def chainPchGenerator(target, source, env, for_signature):
 def generate(env, **kwargs):
 
     for tool in env.get('TOOLS', []):
-        if 'msvc' == tool:
+        if env.ToolchainIs('msvc'):
             print("ERROR: cannot not use pch tool with msvc tool")
             return
-        if 'clang' == tool:
+        if env.ToolchainIs('clang'):
             env['PCHSUFFIX'] = '.pch'
             break
-        if 'gcc' == tool:
+        if env.ToolchainIs('gcc'):
             env['PCHSUFFIX'] = '.gch'
             break
 
