@@ -118,7 +118,7 @@ def pchObjsGenerator(target, source, env, for_signature):
 def chainPchGenerator(target, source, env, for_signature):
     command_line = []
     for pch in env.get('PCHCHAIN', []):
-        command_line += ['-include-pch', pch]
+        command_line += ['-include', SCons.Util.splitext(str(pch))[0]]
         #command_line += [pch]
     print(f"COMMANDLINE: {command_line}")
     return command_line or ""
