@@ -15,8 +15,9 @@ timeZoneEnv.Library(
         '$BUILD_DIR/mongo/db/service_context',
         '$BUILD_DIR/third_party/shim_timelib',
     ],
-    FORCEINCLUDES=[include for include in env.get('FORCEINCLUDES', []) if 'mongo_db_pch.h' not in include],
-    PCH=[]
+    FORCEINCLUDES=[],
+    PCH=[],
+    PCHCHAIN=[]
 )
 
 timeZoneEnv.Library(

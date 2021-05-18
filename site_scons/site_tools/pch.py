@@ -22,6 +22,8 @@
 
 
 import SCons
+import pathlib
+
 
 def update_scanner(env, builder):
     """Update the scanner for "builder" to also scan library dependencies."""
@@ -42,7 +44,7 @@ def update_scanner(env, builder):
         for lib in result:
             for child in lib.sources:
                 if child.get_env().get('PCH'):
-                    pchobjs.add(child.get_env().File(SCons.Util.splitext(str(child.get_env().get('PCH')))[0] + env['PCHSUFFIX']))
+                    pchobjs.add(child.get_env().File(removePchExt(child.get_env().get('PCH')) + env['OBJSUFFIX']))
 
         env['PCHINCLUDES'] = list(pchobjs)
         result += env['PCHINCLUDES']
@@ -75,7 +77,11 @@ def pch_emitter(target, source, env):
 
     target = [pch] # make compatible with window pch interface
     env.Depends(target, env['PCHCHAIN'])
+    env.Depends(removePchExt(pch) + env['OBJSUFFIX'], env['PCHCHAIN'])
     return (target, source)
+
+def removePchExt(file):
+    return SCons.Util.splitext(SCons.Util.splitext(str(file))[0])[0]
 
 def object_emitter(target, source, env, parent_emitter):
     """Sets up the PCH dependencies for an object file."""
@@ -85,7 +91,7 @@ def object_emitter(target, source, env, parent_emitter):
     parent_emitter(target, source, env)
 
     if 'PCH' in env and env['PCH']:
-        env.Depends(target, str(env['PCH']))
+        env.Depends(target, removePchExt(env['PCH']) + env['OBJSUFFIX'])
 
     return (target, source)
 
@@ -101,9 +107,16 @@ def pchsuffixGen(target, source, env, for_signature):
     return SCons.Util.splitext(str(source[0]))[1] + env['PCHSUFFIX']
 
 pch_action = SCons.Action.Action('$PCHCOM', '$PCHCOMSTR')
+
 pch_builder = SCons.Builder.Builder(action=pch_action,
                                     emitter=pch_emitter,
                                     source_scanner=SCons.Tool.SourceFileScanner)
+
+pch_obj_action = SCons.Action.Action('$PCHOBJCOM', '$PCHOBJCOMSTR')
+pch_obj_builder = SCons.Builder.Builder(action=pch_obj_action,
+                                    source_suffix='PCHSUFFIX',
+                                    single_source=True,
+                                    suffix='$OBJSUFFIX')
 
 CSuffixes = ['.c', '.C']
 CXXSuffixes = ['.cc', '.cpp', '.cxx', '.c++', '.C++']
@@ -111,16 +124,22 @@ CXXSuffixes = ['.cc', '.cpp', '.cxx', '.c++', '.C++']
 def pchObjsGenerator(target, source, env, for_signature):
     command_line = []
     for include in env.get('PCHINCLUDES', []):
-        command_line += ['-include', include]
+        command_line += [include]
 
     return command_line or ""
 
 def chainPchGenerator(target, source, env, for_signature):
     command_line = []
-    for pch in env.get('PCHCHAIN', []):
-        command_line += ['-include', SCons.Util.splitext(str(pch))[0]]
-        #command_line += [pch]
-    print(f"COMMANDLINE: {command_line}")
+    for pch in reversed(env.get('PCHCHAIN', [])):
+        command_line += ['-include-pch', pch]
+        #command_line += ['-include',  SCons.Util.splitext(str(pch.srcnode()))[0]]
+        break
+    return command_line or ""
+
+def includePchGenerator(target, source, env, for_signature):
+    command_line = []
+    for pch in reversed(env.get('PCHCHAIN', [])):
+        command_line += ['-include-pch', pch]
     return command_line or ""
 
 def generate(env, **kwargs):
@@ -157,15 +176,19 @@ def generate(env, **kwargs):
     #env['CCPDBFLAGS'] = SCons.Util.CLVar(['${(PDB and "/Z7") or ""}'])
     #env['CCPCHFLAGS'] = SCons.Util.CLVar(['${(PCH and "/Yu%s \\\"/Fp%s\\\""%(PCHSTOP or "",File(PCH))) or ""}'])
     env['_PCHSUFFIX'] = pchsuffixGen
-    env.Append(CXXFLAGS=['-Winvalid-pch'])
+
     #'$CXX -o $TARGET -c $CXXFLAGS $CCFLAGS $_CCCOMCOM $SOURCES'
     #env['PCHCOM'] = '$CXX $CXXFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCE -o $TARGET'
-    env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_CHAINPCH'
+    env['PCHOBJCOM'] = env['CXXCOM'].replace('_CCCOMCOM', '$CPPFLAGS $_CPPDEFFLAGS -fdata-sections -ffunction-sections')
+    env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' -fpch-instantiate-templates $_CHAINPCH'
+    env.Append(CPPFLAGS=['-Winvalid-pch', '$_INLCUDEPCH'])
     env['BUILDERS']['PCH'] = pch_builder
+    env['BUILDERS']['PCHOBJ'] = pch_obj_builder
     env['_PCHINCLUDES'] = pchObjsGenerator
     env['_CHAINPCH'] = chainPchGenerator
+    env['_INLCUDEPCH'] = includePchGenerator
     env['PCHCHAIN'] = []
-    #env.Append(LINKFLAGS='$_PCHINCLUDES')
+    env.Append(_LIBFLAGS=' $_PCHINCLUDES')
 
 
 def exists(env):

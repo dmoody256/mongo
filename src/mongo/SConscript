@@ -52,13 +52,10 @@ pchEnv = env.Clone()
 pchEnv['PCHSTOP'] = ''
 pchEnv['FORCEINCLUDES'] = []
 env['PCH'] = pchEnv.PCH(target='mongo_pch.h'+pchEnv['PCHSUFFIX'], source='mongo_pch.h')[0]
+pchEnv.PCHOBJ(target='mongo_pch', source=env['PCH'])
 env.Append(PCHCHAIN=env['PCH'])
 env['PCHSTOP'] = 'mongo/mongo_pch.h'
-env.PrependUnique(
-    FORCEINCLUDES=[
-        'mongo/mongo_pch.h'
-    ],
-)
+
 
 env.SConscript(
     dirs=[

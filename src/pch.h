@@ -39,25 +39,26 @@
 // don't want to include the C++ headers.
 #if defined(__cplusplus)
 
+
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <ciso646>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <iosfwd>
+#include <iostream>
+#include <limits>
+#include <map>
 #include <memory>
 #include <new>
-#include <string>
-#include <vector>
-#include <utility>
-#include <algorithm>
-#include <functional>
-#include <iostream>
-#include <cstdint>
-#include <cstddef>
-#include <stdint.h>
-#include <stddef.h>
-#include <type_traits>
-#include <map>
 #include <set>
-#include <limits>
+#include <stddef.h>
+#include <stdint.h>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 #endif

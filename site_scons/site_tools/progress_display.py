@@ -250,7 +250,7 @@ def buffered_output(self, s, target, source, env):
     # for a small speed improvement.
     if ProgressCounter.verbose:
         for t in target:
-            ProgressCounter.build_commands[str(t)] = s
+            ProgressCounter.build_commands[str(t)] = str(s)
     return None
 
 visited = set()
@@ -263,7 +263,12 @@ def get_all_dependencies(node, deps, count_q):
 
     global visited
     visited.add(node)
-    for child in node.all_children():
+    try:
+        children = node.all_children()
+    except AttributeError:
+        return
+
+    for child in children:
         if child not in visited:
 
             if isinstance(child, SCons.Node.FS.File) and child.has_builder():
