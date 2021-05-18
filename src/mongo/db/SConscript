@@ -17,13 +17,13 @@ env.InjectThirdParty(libraries=[
     's2',
 ])
 
-pchEnv = env.Clone()
-pchEnv['PCHSTOP'] = ''
-pchEnv['FORCEINCLUDES'] = []
-env['PCH'] = pchEnv.PCH(target='mongo_db_pch.h'+pchEnv['PCHSUFFIX'], source='mongo_db_pch.h')[0]
-#pchEnv.PCHOBJ(target='mongo_db_pch', source=env['PCH'])
-env.Append(PCHCHAIN=[env['PCH']])
-env['PCHSTOP'] = 'mongo/db/mongo_db_pch.h'
+# pchEnv = env.Clone()
+# pchEnv['PCHSTOP'] = ''
+# pchEnv['FORCEINCLUDES'] = []
+# env['PCH'] = pchEnv.PCH(target='mongo_db_pch.h'+pchEnv['PCHSUFFIX'], source='mongo_db_pch.h')[0]
+# #pchEnv.PCHOBJ(target='mongo_db_pch', source=env['PCH'])
+# env.Append(PCHCHAIN=[env['PCH']])
+# env['PCHSTOP'] = 'mongo/db/mongo_db_pch.h'
 
 
 

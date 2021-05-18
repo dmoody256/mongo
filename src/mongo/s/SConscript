@@ -9,12 +9,12 @@ Import([
 
 env = env.Clone()
 
-pchEnv = env.Clone()
-pchEnv['PCHSTOP'] = ''
-pchEnv['FORCEINCLUDES'] = []
-env['PCH'] = pchEnv.PCH(target='mongo_s_pch.h'+pchEnv['PCHSUFFIX'], source='mongo_s_pch.h')[0]
-env.Append(PCHCHAIN=[env['PCH']])
-env['PCHSTOP'] = 'mongo/s/mongo_s_pch.h'
+# pchEnv = env.Clone()
+# pchEnv['PCHSTOP'] = ''
+# pchEnv['FORCEINCLUDES'] = []
+# env['PCH'] = pchEnv.PCH(target='mongo_s_pch.h'+pchEnv['PCHSUFFIX'], source='mongo_s_pch.h')[0]
+# env.Append(PCHCHAIN=[env['PCH']])
+# env['PCHSTOP'] = 'mongo/s/mongo_s_pch.h'
 
 
 
