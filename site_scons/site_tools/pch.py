@@ -44,8 +44,8 @@ def update_scanner(env, builder):
         for lib in result:
             for child in lib.sources:
                 if child.get_env().get('PCH'):
-                    pchobjs.add(child.get_env().File(removePchExt(child.get_env().get('PCH')) + env['OBJSUFFIX']))
-
+                    #pchobjs.add(child.get_env().File(removePchExt(child.get_env().get('PCH')) + env['PCHSUFFIX']))
+                    pchobjs.add(child.get_env().get('PCH'))
         env['PCHINCLUDES'] = list(pchobjs)
         result += env['PCHINCLUDES']
 
@@ -77,7 +77,7 @@ def pch_emitter(target, source, env):
 
     target = [pch] # make compatible with window pch interface
     env.Depends(target, env['PCHCHAIN'])
-    env.Depends(removePchExt(pch) + env['OBJSUFFIX'], env['PCHCHAIN'])
+    #env.Depends(removePchExt(pch) + env['OBJSUFFIX'], env['PCHCHAIN'])
     return (target, source)
 
 def removePchExt(file):
@@ -91,8 +91,8 @@ def object_emitter(target, source, env, parent_emitter):
     parent_emitter(target, source, env)
 
     if 'PCH' in env and env['PCH']:
-        env.Depends(target, removePchExt(env['PCH']) + env['OBJSUFFIX'])
-
+        #env.Depends(target, removePchExt(env['PCH']) + env['OBJSUFFIX'])
+        env.Depends(target, env['PCH'])
     return (target, source)
 
 def static_object_emitter(target, source, env):
@@ -180,7 +180,7 @@ def generate(env, **kwargs):
     #'$CXX -o $TARGET -c $CXXFLAGS $CCFLAGS $_CCCOMCOM $SOURCES'
     #env['PCHCOM'] = '$CXX $CXXFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCE -o $TARGET'
     env['PCHOBJCOM'] = env['CXXCOM'].replace('_CCCOMCOM', '$CPPFLAGS $_CPPDEFFLAGS -fdata-sections -ffunction-sections')
-    env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' -fpch-instantiate-templates $_CHAINPCH'
+    env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_CHAINPCH'
     env.Append(CPPFLAGS=['-Winvalid-pch', '$_INLCUDEPCH'])
     env['BUILDERS']['PCH'] = pch_builder
     env['BUILDERS']['PCHOBJ'] = pch_obj_builder
@@ -188,7 +188,7 @@ def generate(env, **kwargs):
     env['_CHAINPCH'] = chainPchGenerator
     env['_INLCUDEPCH'] = includePchGenerator
     env['PCHCHAIN'] = []
-    env.Append(_LIBFLAGS=' $_PCHINCLUDES')
+    #env.Append(_LIBFLAGS=' $_PCHINCLUDES')
 
 
 def exists(env):
