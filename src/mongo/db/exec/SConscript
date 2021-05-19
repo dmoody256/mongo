@@ -26,6 +26,9 @@ env.Library(
         "$BUILD_DIR/mongo/db/service_context",
         "document_value/document_value",
     ],
+    FORCEINCLUDES=[],
+    PCHCHAIN=[],
+    PCH=[]
 )
 
 env.Library(
