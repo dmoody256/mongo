@@ -140,6 +140,7 @@ def includePchGenerator(target, source, env, for_signature):
     command_line = []
     for pch in reversed(env.get('PCHCHAIN', [])):
         command_line += ['-include-pch', pch]
+        break
     return command_line or ""
 
 def generate(env, **kwargs):
