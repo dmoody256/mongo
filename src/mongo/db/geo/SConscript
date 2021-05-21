@@ -50,5 +50,7 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/common",
         "geometry",
         "geoparser",
-    ]
+    ],
+    FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCH=[],
 )

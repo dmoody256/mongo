@@ -159,4 +159,6 @@ env.CppUnitTest(
         'expressions',
         'path',
     ],
+    FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCH=[],
 )
