@@ -98,11 +98,13 @@ def generate_scons_cache_expansions():
             shared_mount_root = 'X:\\'
         else:
             shared_mount_root = '/efs'
-        default_cache_path = os.path.join(shared_mount_root, system_uuid, "scons-cache")
+        default_cache_path = os.path.join(shared_mount_root, system_uuid, "scons-cache", 'test-pch')
         expansions["scons_cache_path"] = default_cache_path
+        # expansions[
+        #     "scons_cache_args"] = "--cache={0} --cache-signature-mode=validate --cache-dir={1}".format(
+        #         scons_cache_mode, shlex.quote(default_cache_path))
         expansions[
-            "scons_cache_args"] = "--cache={0} --cache-signature-mode=validate --cache-dir={1}".format(
-                scons_cache_mode, shlex.quote(default_cache_path))
+              "scons_cache_args"] = ""
 
     # Local shared cache - host-based
     elif os.getenv("SCONS_CACHE_SCOPE") == "local":
@@ -112,11 +114,13 @@ def generate_scons_cache_expansions():
         else:
             default_cache_path_base = "/data/scons-cache"
 
-        default_cache_path = os.path.join(default_cache_path_base, system_uuid)
+        default_cache_path = os.path.join(default_cache_path_base, system_uuid, 'test-pch')
         expansions["scons_cache_path"] = default_cache_path
+        # expansions[
+        #     "scons_cache_args"] = "--cache={0} --cache-signature-mode=validate --cache-dir={1}".format(
+        #         scons_cache_mode, shlex.quote(default_cache_path))
         expansions[
-            "scons_cache_args"] = "--cache={0} --cache-signature-mode=validate --cache-dir={1}".format(
-                scons_cache_mode, shlex.quote(default_cache_path))
+              "scons_cache_args"] = ""
     # No cache
     else:
         # Anything else is 'none'

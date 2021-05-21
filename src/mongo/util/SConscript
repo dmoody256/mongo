@@ -449,6 +449,8 @@ env.Library(
     LIBDEPS=[
         "$BUILD_DIR/mongo/base",
     ],
+    FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCH=[],
 )
 
 env.Library(
