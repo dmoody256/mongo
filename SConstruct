@@ -5408,6 +5408,13 @@ install_dir = {install_dir}
 pch_tool = Tool('pch')
 if pch_tool.exists(env):
     pch_tool(env)
+    if 'ICECC' in env and env['ICECC']:
+        if get_option('build-tools') == 'next':
+            env.AddIcecreamDepEmitter('PCH', '.h')
+            if env['ICECREAM_VERSION'] < parse_version('1.2'):
+                env['_INCLUDEPCH'] = ""
+        else:
+            env.FatalError('icecream and pch not supported together.')
 else:
     def update_scanner(env, builder):
         """Update the scanner for "builder" to also scan library dependencies."""

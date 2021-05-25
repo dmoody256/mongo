@@ -44,7 +44,7 @@ def pch_emitter(target, source, env):
     obj = None
 
     for t in target:
-        if SCons.Util.splitext(str(t))[1] == env['PCHSUFFIX']:
+        if str(t).endswith(env['PCHSUFFIX']):
             pch = t
             env.Depends(pch, env.get('PCHCHAIN', []))
 
@@ -55,28 +55,16 @@ def pch_emitter(target, source, env):
 def removePchExt(file):
     return SCons.Util.splitext(SCons.Util.splitext(str(file))[0])[0]
 
-def object_emitter(target, source, env, parent_emitter):
+def object_emitter(target, source, env):
     """Sets up the PCH dependencies for an object file."""
 
     validate_vars(env)
-
-    parent_emitter(target, source, env)
 
     if 'PCH' in env and env['PCH']:
         env.Depends(target, env['PCH'])
 
     return (target, source)
 
-def static_object_emitter(target, source, env):
-    return object_emitter(target, source, env,
-                          SCons.Defaults.StaticObjectEmitter)
-
-def shared_object_emitter(target, source, env):
-    return object_emitter(target, source, env,
-                          SCons.Defaults.SharedObjectEmitter)
-
-CSuffixes = ['.c', '.C']
-CXXSuffixes = ['.cc', '.cpp', '.cxx', '.c++', '.C++']
 
 def includePchGenerator(target, source, env, for_signature):
     pch = env.get('PCH')
@@ -95,7 +83,7 @@ def pchGccForceIncludes(target, source, env, for_signature):
         chain = env.get('PCHCHAIN', [])
         if chain:
             for pch in chain[1:]:
-                pch_header = str(pathlib.Path(str(pch)).with_suffix(''))
+                pch_header = str(pch)[:-len(env['PCHSUFFIX'])]
                 if pch_header.endswith(fin):
                     found = True
                     break
@@ -119,7 +107,7 @@ def excludePchForceIncludes(env):
                     fin_header = str(pathlib.Path(str(fin)).with_suffix(''))
                 else:
                     fin_header = fin
-                pch_header = str(pathlib.Path(str(pch)).with_suffix(''))
+                pch_header = str(pch)[:-len(env['PCHSUFFIX'])]
                 if pch_header.endswith(fin_header):
                     found = True
                     break
@@ -143,12 +131,20 @@ def generate(env, **kwargs):
         print("ERROR: cannot not use pch tool on windows.")
         return
 
+    if env.GetOption('link-model').startswith('dynamic'):
+        shared_suf = '.dyn'
+        env['PCHCOM'] = env['SHCXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_INCLUDEPCH'
+    else:
+        shared_suf = ''
+        env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_INCLUDEPCH'
+
     if subprocess.getstatusoutput(f"{env['CC']} -v 2>&1 | grep -e 'LLVM version' -e 'clang version'")[0] == 0:
-        env['PCHSUFFIX'] = '.pch'
+        env['PCHSUFFIX'] = shared_suf + '.pch'
         env['_FORCEINCLUDES'] = pchClangForceIncludes
         env['_INCLUDEPCH'] = includePchGenerator
+        env['PCHCOM'] += ' -Xclang -fno-pch-timestamp '
     elif subprocess.getstatusoutput(f'{env["CC"]} -v 2>&1 | grep "gcc version"')[0] == 0:
-        env['PCHSUFFIX'] = '.gch'
+        env['PCHSUFFIX'] = shared_suf + '.gch'
         env['_FORCEINCLUDES'] = pchGccForceIncludes
         env['_INCLUDEPCH'] = ""
 
@@ -162,16 +158,34 @@ def generate(env, **kwargs):
                                     suffix=pchSuffix,
                                     source_scanner=SCons.Tool.SourceFileScanner)
 
-    static_obj, shared_obj = SCons.Tool.createObjBuilders(env)
-    for suffix in CSuffixes:
-        static_obj.add_emitter(suffix, static_object_emitter)
-        shared_obj.add_emitter(suffix, shared_object_emitter)
 
-    for suffix in CXXSuffixes:
-        static_obj.add_emitter(suffix, static_object_emitter)
-        shared_obj.add_emitter(suffix, shared_object_emitter)
+    # Cribbed from Tool/cc.py and Tool/c++.py. It would be better if
+    # we could obtain this from SCons.
+    _CSuffixes = [".c"]
+    if not SCons.Util.case_sensitive_suffixes(".c", ".C"):
+        _CSuffixes.append(".C")
 
-    env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_INCLUDEPCH'
+    _CXXSuffixes = [".cpp", ".cc", ".cxx", ".c++", ".C++"]
+    if SCons.Util.case_sensitive_suffixes(".c", ".C"):
+        _CXXSuffixes.append(".C")
+
+    suffixes = _CSuffixes + _CXXSuffixes
+    for object_builder in SCons.Tool.createObjBuilders(env):
+        emitterdict = object_builder.builder.emitter
+        for suffix in emitterdict.keys():
+            if not suffix in suffixes:
+                continue
+            base = emitterdict[suffix]
+            emitterdict[suffix] = SCons.Builder.ListEmitter(
+                [base, object_emitter]
+            )
+
+    # older ccache will not use these correctly (https://github.com/ccache/ccache/issues/235)
+    # and will fail to cache the pch, but newer ccache will need these to work correctly.
+    # These could be a concern for some build systems, but scons is robust
+    # enough with content hashing and dependencies that its doesn't need ccache to worry.
+    env['ENV']['CCACHE_SLOPPINESS'] = 'pch_defines,time_macros,include_file_ctime,include_file_mtime'
+
     env.Append(CCFLAGS=['-Winvalid-pch', '$_INCLUDEPCH'])
     env['BUILDERS']['PCH'] = pch_builder
     env['PCHCHAIN'] = []
