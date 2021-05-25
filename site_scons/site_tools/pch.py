@@ -105,9 +105,11 @@ def excludePchForceIncludes(env):
             for pch in chain:
                 if sys.platform == 'win32':
                     fin_header = str(pathlib.Path(str(fin)).with_suffix(''))
+                    pch_suffix = '.pch'
                 else:
                     fin_header = fin
-                pch_header = str(pch)[:-len(env['PCHSUFFIX'])]
+                    pch_suffix = env['PCHSUFFIX']
+                pch_header = str(pch)[:-len(pch_suffix)]
                 if pch_header.endswith(fin_header):
                     found = True
                     break
