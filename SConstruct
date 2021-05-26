@@ -5415,7 +5415,8 @@ if pch_tool.exists(env):
                 env['_INCLUDEPCH'] = ""
         else:
             env.FatalError('icecream and pch not supported together.')
-else:
+else: # windows
+    env.Append(CXXFLAGS='/Yl-')
     def update_scanner(env, builder):
         """Update the scanner for "builder" to also scan library dependencies."""
 
