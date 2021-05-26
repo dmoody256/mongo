@@ -1448,15 +1448,12 @@ def generate(env):
     # TODO: change LINKCOM and SHLINKCOM to handle embedding manifest exe checks
     # without relying on the SCons hacks that SCons uses by default.
     if env["PLATFORM"] == "win32":
-        from SCons.Tool.mslink import compositeLinkAction
+        from SCons.Tool.mslink import compositeLinkAction, compositeShLinkAction
 
         if env["LINKCOM"] == compositeLinkAction:
-            env[
-                "LINKCOM"
-            ] = '${TEMPFILE("$LINK $LINKFLAGS /OUT:$TARGET.windows $_LIBDIRFLAGS $_LIBFLAGS $_PDB $SOURCES.windows", "$LINKCOMSTR")}'
-            env[
-                "SHLINKCOM"
-            ] = '${TEMPFILE("$SHLINK $SHLINKFLAGS $_SHLINK_TARGETS $_LIBDIRFLAGS $_LIBFLAGS $_PDB $_SHLINK_SOURCES", "$SHLINKCOMSTR")}'
+            env["LINKCOM"] = str(compositeLinkAction.list[0])
+        if env["SHLINKCOM"] == compositeShLinkAction:
+            env["SHLINKCOM"] = str(compositeShLinkAction.list[0])
 
     # Normally in SCons actions for the Program and *Library builders
     # will return "${*COM}" as their pre-subst'd command line. However
