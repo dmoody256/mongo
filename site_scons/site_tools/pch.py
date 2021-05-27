@@ -25,7 +25,7 @@ import SCons
 import sys
 import pathlib
 import subprocess
-
+import hashlib
 
 def validate_vars(env):
     """Validate the PCH and PCHSTOP construction variables."""
@@ -48,7 +48,7 @@ def pch_emitter(target, source, env):
             pch = t
             env.Depends(pch, env.get('PCHCHAIN', []))
 
-    target = [pch]
+    target = [env.File(str(pch))]
 
     return (target, source)
 
@@ -65,24 +65,34 @@ def object_emitter(target, source, env):
 
     return (target, source)
 
+def get_path_hash(path):
+    m = hashlib.md5()
+    m.update(path.encode('utf-8'))
+    return m.hexdigest()
+
 
 def includePchGenerator(target, source, env, for_signature):
 
     pch = env.get('PCHCHAIN', [])
-    if pch:
-        return ['-include-pch', pch[0].abspath]
 
+    if pch:
+        result = [f'-Dcachepath{get_path_hash(env.get_CacheDir().path)}']
+        result += ['-include-pch', pch[0]]
+        return result
     return ""
 
 def includePchChainGenerator(target, source, env, for_signature):
+    import traceback
+    try:
+        pch = env.get('PCHCHAIN', [])
+        result = [f'-Dcachepath{get_path_hash(env.get_CacheDir().path)}']
+        if pch:
+            result += ['-include-pch', pch[0].abspath]
 
-    pch = env.get('PCHCHAIN', [])
-    if for_signature:
-        return target[0].abspath
-    if pch:
-        return ['-include-pch', pch[0].abspath]
 
-    return ""
+        return result
+    except:
+        traceback.print_exc()
 
 def pchGccForceIncludes(target, source, env, for_signature):
     fins = env.get('FORCEINCLUDES', [])
@@ -151,7 +161,6 @@ def generate(env, **kwargs):
         shared_suf = ''
         env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_COMINCLUDEPCH'
         env.Append(CXXFLAGS=['-Winvalid-pch', '$_INCLUDEPCH'])
-    env['PCHCOM'] = env['PCHCOM'].replace(' -o $TARGET ', ' -o ${TARGET.abspath} ')
 
     if subprocess.getstatusoutput(f"{env['CC']} -v 2>&1 | grep -e 'LLVM version' -e 'clang version'")[0] == 0:
         env['PCHSUFFIX'] = shared_suf + '.pch'
