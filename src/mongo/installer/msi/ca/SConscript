@@ -35,5 +35,6 @@ ca = env.SharedLibrary(
         '$BUILD_DIR/third_party/shim_allocator',
     ],
     FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[],
     PCH=[],
 )

@@ -602,5 +602,6 @@ if wiredtiger:
             'validate_state',
         ],
         FORCEINCLUDES=env.ExcludePchForceIncludes(),
+        PCHCHAIN=[],
         PCH=[],
     )

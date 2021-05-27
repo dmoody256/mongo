@@ -620,6 +620,7 @@ env.Library(
         '$BUILD_DIR/mongo/util/net/network',
     ],
     FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[],
     PCH=[],
 )
 

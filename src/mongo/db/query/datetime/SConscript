@@ -16,6 +16,7 @@ timeZoneEnv.Library(
         '$BUILD_DIR/third_party/shim_timelib',
     ],
     FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[],
     PCH=[],
 )
 

@@ -73,12 +73,11 @@ def includePchGenerator(target, source, env, for_signature):
     return ""
 
 def includePchGeneratorPchcom(target, source, env, for_signature):
+    if for_signature:
+        return target[0].abspath
     pch = env.get('PCHCHAIN', [])
     if pch:
-        if for_signature:
-            return pch[0].abspath
-        else:
-            return ['-include-pch', pch[0]]
+        return ['-include-pch', pch[0]]
     return ""
 
 def pchGccForceIncludes(target, source, env, for_signature):
@@ -143,22 +142,24 @@ def generate(env, **kwargs):
     if env.GetOption('link-model').startswith('dynamic'):
         shared_suf = '.dyn'
         env['PCHCOM'] = env['SHCXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_INCLUDEPCHCOM'
+        env.Append(SHCXXFLAGS=['-Winvalid-pch', '$_INCLUDEPCH'])
     else:
         shared_suf = ''
         env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_INCLUDEPCHCOM'
+        env.Append(CXXFLAGS=['-Winvalid-pch', '$_INCLUDEPCH'])
 
     if subprocess.getstatusoutput(f"{env['CC']} -v 2>&1 | grep -e 'LLVM version' -e 'clang version'")[0] == 0:
         env['PCHSUFFIX'] = shared_suf + '.pch'
         env['_FORCEINCLUDES'] = pchClangForceIncludes
         env['_INCLUDEPCH'] = includePchGenerator
         env['_INCLUDEPCHCOM'] = includePchGeneratorPchcom
-
         env['PCHCOM'] += ' -Xclang -fno-pch-timestamp '
     elif subprocess.getstatusoutput(f'{env["CC"]} -v 2>&1 | grep "gcc version"')[0] == 0:
         env['PCHSUFFIX'] = shared_suf + '.gch'
         env['_FORCEINCLUDES'] = pchGccForceIncludes
         env['_INCLUDEPCH'] = ""
         env['_INCLUDEPCHCOM'] = ""
+
 
     if 'PCHSUFFIX' not in env:
         print("ERROR: pch tool needs gcc or clang tools loaded first")
@@ -198,7 +199,7 @@ def generate(env, **kwargs):
     # enough with content hashing and dependencies that its doesn't need ccache to worry.
     env['ENV']['CCACHE_SLOPPINESS'] = 'pch_defines,time_macros,include_file_ctime,include_file_mtime'
 
-    env.Append(CCFLAGS=['-Winvalid-pch', '$_INCLUDEPCH'])
+
     env['BUILDERS']['PCH'] = pch_builder
     env['PCHCHAIN'] = []
 

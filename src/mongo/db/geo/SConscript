@@ -20,6 +20,7 @@ env.Library(
         "$BUILD_DIR/third_party/s2/s2"
     ],
     FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[],
     PCH=[],
 )
 
@@ -52,5 +53,6 @@ env.CppUnitTest(
         "geoparser",
     ],
     FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[],
     PCH=[],
 )

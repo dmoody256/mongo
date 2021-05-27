@@ -27,6 +27,7 @@ env.Library(
         "document_value/document_value",
     ],
     FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[],
     PCH=[],
 )
 
