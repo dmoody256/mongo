@@ -76,7 +76,7 @@ def includePchGenerator(target, source, env, for_signature):
     pch = env.get('PCHCHAIN', [])
 
     if pch:
-        result = [f'-Dcachepath{get_path_hash(env.get_CacheDir().path)}']
+        result = [f'-Dcachepath{get_path_hash(env.get_CacheDir().path + env.get("PKGDIR", ""))}']
         result += ['-include-pch', pch[0]]
         return result
     return ""
@@ -85,7 +85,7 @@ def includePchChainGenerator(target, source, env, for_signature):
     import traceback
     try:
         pch = env.get('PCHCHAIN', [])
-        result = [f'-Dcachepath{get_path_hash(env.get_CacheDir().path)}']
+        result = [f'-Dcachepath{get_path_hash(env.get_CacheDir().path + env.get("PKGDIR", ""))}']
         if pch:
             result += ['-include-pch', pch[0].abspath]
 
