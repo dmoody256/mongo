@@ -146,13 +146,11 @@ def generate(env, **kwargs):
         env['PCHSUFFIX'] = shared_suf + '.pch'
         env['_FORCEINCLUDES'] = pchClangForceIncludes
         env['_INCLUDEPCH'] = includePchGenerator
-        env['_INCLUDEPCHCOM'] = includePchGeneratorPchcom
         env['PCHCOM'] += ' -Xclang -fno-pch-timestamp '
     elif subprocess.getstatusoutput(f'{env["CC"]} -v 2>&1 | grep "gcc version"')[0] == 0:
         env['PCHSUFFIX'] = shared_suf + '.gch'
         env['_FORCEINCLUDES'] = pchGccForceIncludes
         env['_INCLUDEPCH'] = ""
-        env['_INCLUDEPCHCOM'] = ""
 
 
     if 'PCHSUFFIX' not in env:
