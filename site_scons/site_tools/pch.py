@@ -76,7 +76,7 @@ def includePchGeneratorPchcom(target, source, env, for_signature):
     pch = env.get('PCHCHAIN', [])
     if pch:
         if for_signature:
-            return pch.abspath
+            return pch[0].abspath
         else:
             return ['-include-pch', pch[0]]
     return ""
