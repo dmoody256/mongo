@@ -67,12 +67,6 @@ def object_emitter(target, source, env):
 
 
 def includePchGenerator(target, source, env, for_signature):
-    pch = env.get('PCHCHAIN', [])
-    if pch:
-        return ['-include-pch', pch[0]]
-    return ""
-
-def includePchGeneratorPchcom(target, source, env, for_signature):
     if for_signature:
         return target[0].abspath
     pch = env.get('PCHCHAIN', [])
@@ -141,11 +135,11 @@ def generate(env, **kwargs):
 
     if env.GetOption('link-model').startswith('dynamic'):
         shared_suf = '.dyn'
-        env['PCHCOM'] = env['SHCXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_INCLUDEPCHCOM'
+        env['PCHCOM'] = env['SHCXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_INCLUDEPCH'
         env.Append(SHCXXFLAGS=['-Winvalid-pch', '$_INCLUDEPCH'])
     else:
         shared_suf = ''
-        env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_INCLUDEPCHCOM'
+        env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_INCLUDEPCH'
         env.Append(CXXFLAGS=['-Winvalid-pch', '$_INCLUDEPCH'])
 
     if subprocess.getstatusoutput(f"{env['CC']} -v 2>&1 | grep -e 'LLVM version' -e 'clang version'")[0] == 0:
