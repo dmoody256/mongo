@@ -255,7 +255,7 @@ exeLinkAction = SCons.Action.Action('${TEMPFILE("$LINK $LINKFLAGS /OUT:$TARGET.w
 compositeLinkAction = exeLinkAction + embedManifestExeCheckAction
 
 def pchObjsGenerator(target, source, env, for_signature):
-    return env.get('PCHOBJS', "")
+    return [obj.abspath for obj in env.get('PCHOBJS', [])]
 
 def generate(env):
     """Add Builders and construction variables for ar to an Environment."""
