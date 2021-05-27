@@ -67,11 +67,17 @@ def object_emitter(target, source, env):
 
 
 def includePchGenerator(target, source, env, for_signature):
-    if for_signature:
-        return target[0].abspath
+
     pch = env.get('PCHCHAIN', [])
+    if for_signature:
+        if not pch:
+            return target[0].abspath
+        else:
+            return pch[0].abspath
+
     if pch:
         return ['-include-pch', pch[0]]
+
     return ""
 
 def pchGccForceIncludes(target, source, env, for_signature):
