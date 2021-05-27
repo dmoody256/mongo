@@ -69,14 +69,18 @@ def object_emitter(target, source, env):
 def includePchGenerator(target, source, env, for_signature):
 
     pch = env.get('PCHCHAIN', [])
-    if for_signature:
-        if not pch:
-            return target[0].abspath
-        else:
-            return pch[0].abspath
-
     if pch:
-        return ['-include-pch', pch[0]]
+        return ['-include-pch', pch[0].abspath]
+
+    return ""
+
+def includePchChainGenerator(target, source, env, for_signature):
+
+    pch = env.get('PCHCHAIN', [])
+    if for_signature:
+        return target[0].abspath
+    if pch:
+        return ['-include-pch', pch[0].abspath]
 
     return ""
 
@@ -141,22 +145,24 @@ def generate(env, **kwargs):
 
     if env.GetOption('link-model').startswith('dynamic'):
         shared_suf = '.dyn'
-        env['PCHCOM'] = env['SHCXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_INCLUDEPCH'
+        env['PCHCOM'] = env['SHCXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_COMINCLUDEPCH'
         env.Append(SHCXXFLAGS=['-Winvalid-pch', '$_INCLUDEPCH'])
     else:
         shared_suf = ''
-        env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_INCLUDEPCH'
+        env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_COMINCLUDEPCH'
         env.Append(CXXFLAGS=['-Winvalid-pch', '$_INCLUDEPCH'])
 
     if subprocess.getstatusoutput(f"{env['CC']} -v 2>&1 | grep -e 'LLVM version' -e 'clang version'")[0] == 0:
         env['PCHSUFFIX'] = shared_suf + '.pch'
         env['_FORCEINCLUDES'] = pchClangForceIncludes
         env['_INCLUDEPCH'] = includePchGenerator
+        env['_COMINCLUDEPCH'] = includePchChainGenerator
         env['PCHCOM'] += ' -Xclang -fno-pch-timestamp '
     elif subprocess.getstatusoutput(f'{env["CC"]} -v 2>&1 | grep "gcc version"')[0] == 0:
         env['PCHSUFFIX'] = shared_suf + '.gch'
         env['_FORCEINCLUDES'] = pchGccForceIncludes
         env['_INCLUDEPCH'] = ""
+        env['_COMINCLUDEPCH'] = ""
 
 
     if 'PCHSUFFIX' not in env:

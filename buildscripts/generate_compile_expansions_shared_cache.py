@@ -98,7 +98,7 @@ def generate_scons_cache_expansions():
             shared_mount_root = 'X:\\'
         else:
             shared_mount_root = '/efs'
-        default_cache_path = os.path.join(shared_mount_root, system_uuid, "scons-cache", 'test-pch')
+        default_cache_path = os.path.join(shared_mount_root, system_uuid, "scons-cache", 'test2-pch')
         expansions["scons_cache_path"] = default_cache_path
         expansions[
             "scons_cache_args"] = "--cache={0} --cache-signature-mode=validate --cache-dir={1}".format(
@@ -113,7 +113,7 @@ def generate_scons_cache_expansions():
         else:
             default_cache_path_base = "/data/scons-cache"
 
-        default_cache_path = os.path.join(default_cache_path_base, system_uuid, 'test-pch')
+        default_cache_path = os.path.join(default_cache_path_base, system_uuid, 'test2-pch')
         expansions["scons_cache_path"] = default_cache_path
         expansions[
             "scons_cache_args"] = "--cache={0} --cache-signature-mode=validate --cache-dir={1}".format(

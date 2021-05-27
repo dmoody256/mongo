@@ -85,7 +85,7 @@ def generate_scons_cache_expansions():
 
     if os.path.isfile(system_id_path):
         with open(system_id_path, "r") as fh:
-            default_cache_path = os.path.join(default_cache_path_base, fh.readline().strip(), 'test-pch')
+            default_cache_path = os.path.join(default_cache_path_base, fh.readline().strip(), 'test2-pch')
 
             expansions["scons_cache_path"] = default_cache_path
 
