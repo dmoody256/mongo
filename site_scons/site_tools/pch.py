@@ -151,6 +151,7 @@ def generate(env, **kwargs):
         shared_suf = ''
         env['PCHCOM'] = env['CXXCOM'].replace(' -c ', ' -x c++-header ') + ' $_COMINCLUDEPCH'
         env.Append(CXXFLAGS=['-Winvalid-pch', '$_INCLUDEPCH'])
+    env['PCHCOM'] = env['PCHCOM'].replace(' -o $TARGET ', ' -o ${TARGET.abspath} ')
 
     if subprocess.getstatusoutput(f"{env['CC']} -v 2>&1 | grep -e 'LLVM version' -e 'clang version'")[0] == 0:
         env['PCHSUFFIX'] = shared_suf + '.pch'

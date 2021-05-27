@@ -237,7 +237,7 @@ def generate(env):
         shared_obj.add_emitter(suffix, shared_object_emitter)
 
     env['CCPDBFLAGS'] = SCons.Util.CLVar(['${(PDB and "/Z7") or ""}'])
-    env['CCPCHFLAGS'] = SCons.Util.CLVar(['${(PCH and "/Yu%s \\\"/Fp%s\\\""%(PCHSTOP or "",File(PCH))) or ""}'])
+    env['CCPCHFLAGS'] = SCons.Util.CLVar(['${(PCH and "/Yu%s \\\"/Fp%s\\\""%(PCHSTOP or "",File(PCH).abspath)) or ""}'])
     env['_MSVC_OUTPUT_FLAG'] = msvc_output_flag
     env['_CCCOMCOM']  = '$CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $CCPCHFLAGS $CCPDBFLAGS'
     env['CC']         = 'cl'
@@ -291,7 +291,7 @@ def generate(env):
     env['TEMPFILEARGJOIN'] = os.linesep
 
 
-    env['PCHCOM'] = '$CXX /Fo${TARGETS[1]} $CXXFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS /c $SOURCES /Yl- /Yc$PCHSTOP /Fp${TARGETS[0].abspath} $CCPDBFLAGS $PCHPDBFLAGS'
+    env['PCHCOM'] = '$CXX /Fo${TARGETS[1].abspath} $CXXFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS /c $SOURCES /Yl- /Yc$PCHSTOP /Fp${TARGETS[0].abspath} $CCPDBFLAGS $PCHPDBFLAGS'
     env['BUILDERS']['PCH'] = pch_builder
 
     if 'ENV' not in env:
