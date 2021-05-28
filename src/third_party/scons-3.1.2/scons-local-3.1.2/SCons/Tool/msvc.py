@@ -37,6 +37,7 @@ import os.path
 import os
 import re
 import sys
+import hashlib
 
 import SCons.Action
 import SCons.Builder
@@ -290,8 +291,13 @@ def generate(env):
     # in a tempfile
     env['TEMPFILEARGJOIN'] = os.linesep
 
+    def get_path_hash(path):
+        m = hashlib.md5()
+        m.update(path.encode('utf-8'))
+        return m.hexdigest()
 
-    env['PCHCOM'] = '$CXX /Fo${TARGETS[1].abspath} $CXXFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS /c $SOURCES /Yl- /Yc$PCHSTOP /Fp${TARGETS[0].abspath} $CCPDBFLAGS $PCHPDBFLAGS'
+    env['PCHCOM'] = '$CXX /Fo${TARGETS[1]} $CXXFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS /c $SOURCES /Yl- /Yc$PCHSTOP /Fp${TARGETS[0]} $CCPDBFLAGS $PCHPDBFLAGS' + f' -Dcachepath{get_path_hash(env.get_CacheDir().path + env.get("PKGDIR", ""))}'
+    env.Append(CXXFLAGS=[f'-Dcachepath{get_path_hash(env.get_CacheDir().path + env.get("PKGDIR", ""))}'])
     env['BUILDERS']['PCH'] = pch_builder
 
     if 'ENV' not in env:
