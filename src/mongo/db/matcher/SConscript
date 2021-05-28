@@ -156,4 +156,7 @@ env.CppUnitTest(
         'expressions',
         'path',
     ],
+    FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[pch for pch in env['PCHCHAIN'] if env.TargetOSIs('windows')],
+    PCH=[],
 )

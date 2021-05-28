@@ -37,9 +37,9 @@ fi
 
 # Build packages where the upload tasks expect them
 if [ -n "${git_project_directory}" ]; then
-  extra_args="$extra_args PKGDIR='${git_project_directory}'"
+  extra_args="$extra_args PKGDIR='${git_project_directory}' PCHSIGNATURE='${git_project_directory}'"
 else
-  extra_args="$extra_args PKGDIR='${workdir}/src'"
+  extra_args="$extra_args PKGDIR='${workdir}/src' PCHSIGNATURE='${workdir}/src'"
 fi
 
 # If we are doing a patch build or we are building a non-push

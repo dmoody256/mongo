@@ -98,6 +98,37 @@ def icecc_create_env(env, target, source, for_signature):
     cmdline = f"{mkdir} && {create_env} && {mv}"
     return cmdline
 
+def icecc_toolchain_dependency_emitter(target, source, env):
+        if "conftest" not in str(target[0]):
+            # Requires or Depends? There are trade-offs:
+            #
+            # If it is `Depends`, then enabling or disabling icecream
+            # will cause a global recompile. But, if you regenerate a
+            # new compiler package, you will get a rebuild. If it is
+            # `Requires`, then enabling or disabling icecream will not
+            # necessarily cause a global recompile (it depends if
+            # C[,C,XX]FLAGS get changed when you do so), but on the
+            # other hand if you regenerate a new compiler package you
+            # will *not* get a rebuild.
+            #
+            # For now, we are opting for `Requires`, because it seems
+            # preferable that opting in or out of icecream shouldn't
+            # force a rebuild.
+            env.Requires(target, "$ICECREAM_RUN_ICECC")
+        return target, source
+
+def add_icecream_dependency_emitter(env, builder_name, suffix):
+
+    emitter = env['BUILDERS'][builder_name].emitter
+
+    try:
+        base = emitter[suffix]
+        emitter[suffix] = SCons.Builder.ListEmitter(
+            [base, icecc_toolchain_dependency_emitter]
+        )
+    except TypeError:
+        new_emitter = SCons.Builder.ListEmitter([emitter, icecc_toolchain_dependency_emitter])
+        env['BUILDERS'][builder_name].emitter = new_emitter
 
 def generate(env):
     # icecc lower then 1.1 supports addfile remapping accidentally
@@ -384,25 +415,6 @@ def generate(env):
 
     env['ICECREAM_RUN_ICECC'] = run_icecc[0]
 
-    def icecc_toolchain_dependency_emitter(target, source, env):
-        if "conftest" not in str(target[0]):
-            # Requires or Depends? There are trade-offs:
-            #
-            # If it is `Depends`, then enabling or disabling icecream
-            # will cause a global recompile. But, if you regenerate a
-            # new compiler package, you will get a rebuild. If it is
-            # `Requires`, then enabling or disabling icecream will not
-            # necessarily cause a global recompile (it depends if
-            # C[,C,XX]FLAGS get changed when you do so), but on the
-            # other hand if you regenerate a new compiler package you
-            # will *not* get a rebuild.
-            #
-            # For now, we are opting for `Requires`, because it seems
-            # preferable that opting in or out of icecream shouldn't
-            # force a rebuild.
-            env.Requires(target, "$ICECREAM_RUN_ICECC")
-        return target, source
-
     # Cribbed from Tool/cc.py and Tool/c++.py. It would be better if
     # we could obtain this from SCons.
     _CSuffixes = [".c"]
@@ -511,9 +523,11 @@ def generate(env):
             env[command] = " ".join(["$( $ICERUN_GENERATOR $)", env[command]])
 
     # Uncomment these to debug your icecc integration
-    if env['ICECREAM_DEBUG']:
-        env['ENV']['ICECC_DEBUG'] = 'debug'
-        env['ENV']['ICECC_LOGFILE'] = 'icecc.log'
+    #if env['ICECREAM_DEBUG']:
+    env['ENV']['ICECC_DEBUG'] = 'debug'
+    env['ENV']['ICECC_LOGFILE'] = 'icecc.log'
+
+    env.AddMethod(add_icecream_dependency_emitter, "AddIcecreamDepEmitter")
 
 
 def exists(env):

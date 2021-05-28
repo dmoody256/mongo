@@ -26,6 +26,9 @@ env.Library(
         "$BUILD_DIR/mongo/db/service_context",
         "document_value/document_value",
     ],
+    FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[pch for pch in env['PCHCHAIN'] if env.TargetOSIs('windows')],
+    PCH=[],
 )
 
 env.Library(

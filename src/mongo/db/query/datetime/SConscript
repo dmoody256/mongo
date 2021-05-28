@@ -14,7 +14,10 @@ timeZoneEnv.Library(
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/service_context',
         '$BUILD_DIR/third_party/shim_timelib',
-    ]
+    ],
+    FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[pch for pch in env['PCHCHAIN'] if env.TargetOSIs('windows')],
+    PCH=[],
 )
 
 timeZoneEnv.Library(

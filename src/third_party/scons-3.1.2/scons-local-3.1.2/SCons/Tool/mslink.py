@@ -96,7 +96,6 @@ def _windowsLdmodSources(target, source, env, for_signature):
 
 def _dllEmitter(target, source, env, paramtp):
     """Common implementation of dll emitter."""
-    SCons.Tool.msvc.validate_vars(env)
 
     extratargets = []
     extrasources = []
@@ -131,13 +130,13 @@ def _dllEmitter(target, source, env, paramtp):
         extratargets.append(pdb)
         target[0].attributes.pdb = pdb
 
-    if version_num >= 11.0 and env.get('PCH', 0):
-        # MSVC 11 and above need the PCH object file to be added to the link line,
-        # otherwise you get link error LNK2011.
-        pchobj = SCons.Util.splitext(str(env['PCH']))[0] + '.obj'
-        # print "prog_emitter, version %s, appending pchobj %s"%(version_num, pchobj)
-        if pchobj not in extrasources:
-            extrasources.append(pchobj)
+    # if version_num >= 11.0 and env.get('PCH', 0):
+    #     # MSVC 11 and above need the PCH object file to be added to the link line,
+    #     # otherwise you get link error LNK2011.
+    #     pchobj = SCons.Util.splitext(str(env['PCH']))[0] + '.obj'
+    #     # print "prog_emitter, version %s, appending pchobj %s"%(version_num, pchobj)
+    #     if pchobj not in extrasources:
+    #         extrasources.append(pchobj)
 
     if not no_import_lib and \
        not env.FindIxes(target, "LIBPREFIX", "LIBSUFFIX"):
@@ -166,7 +165,6 @@ def ldmodEmitter(target, source, env):
     return _dllEmitter(target, source, env, 'LDMODULE')
 
 def prog_emitter(target, source, env):
-    SCons.Tool.msvc.validate_vars(env)
 
     extratargets = []
     extrasources = []
@@ -189,13 +187,13 @@ def prog_emitter(target, source, env):
         extratargets.append(pdb)
         target[0].attributes.pdb = pdb
 
-    if version_num >= 11.0 and env.get('PCH', 0):
-        # MSVC 11 and above need the PCH object file to be added to the link line,
-        # otherwise you get link error LNK2011.
-        pchobj = SCons.Util.splitext(str(env['PCH']))[0] + '.obj'
-        # print("prog_emitter, version %s, appending pchobj %s"%(version_num, pchobj))
-        if pchobj not in extrasources:
-            extrasources.append(pchobj)
+    # if version_num >= 11.0 and env.get('PCH', 0):
+    #     # MSVC 11 and above need the PCH object file to be added to the link line,
+    #     # otherwise you get link error LNK2011.
+    #     pchobj = SCons.Util.splitext(str(env['PCH']))[0] + '.obj'
+    #     # print("prog_emitter, version %s, appending pchobj %s"%(version_num, pchobj))
+    #     if pchobj not in extrasources:
+    #         extrasources.append(pchobj)
 
     return (target+extratargets,source+extrasources)
 

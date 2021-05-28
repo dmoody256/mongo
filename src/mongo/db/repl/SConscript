@@ -615,6 +615,9 @@ env.Library(
         '$BUILD_DIR/mongo/db/concurrency/lock_manager',
         '$BUILD_DIR/mongo/util/net/network',
     ],
+    FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[pch for pch in env['PCHCHAIN'] if env.TargetOSIs('windows')],
+    PCH=[],
 )
 
 env.Library(

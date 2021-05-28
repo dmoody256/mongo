@@ -9,6 +9,19 @@ Import([
 
 env = env.Clone()
 
+pchEnv = env.Clone()
+pchEnv['PCHSTOP'] = ''
+pchEnv['FORCEINCLUDES'] = []
+env['PCH'] = pchEnv.PCH('mongo_s_pch.h')[0]
+env.Append(PCHCHAIN=[env['PCH']])
+env['PCHSTOP'] = 'mongo/s/mongo_s_pch.h'
+env.AppendUnique(
+    FORCEINCLUDES=[
+        'mongo/s/mongo_s_pch.h',
+    ],
+)
+
+
 env.SConscript(
     dirs=[
         'catalog',

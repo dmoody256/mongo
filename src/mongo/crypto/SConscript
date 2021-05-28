@@ -46,7 +46,10 @@ if "tom" in env["MONGO_CRYPTO"]:
         ],
         LIBDEPS_PRIVATE=[
             '$BUILD_DIR/third_party/shim_tomcrypt',
-        ]
+        ],
+        FORCEINCLUDES=env.ExcludePchForceIncludes(),
+        PCHCHAIN=[pch for pch in env['PCHCHAIN'] if env.TargetOSIs('windows')],
+        PCH=[],
     )
 
 else:

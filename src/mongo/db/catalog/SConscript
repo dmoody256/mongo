@@ -597,4 +597,7 @@ if wiredtiger:
             'validate_idl',
             'validate_state',
         ],
+        FORCEINCLUDES=env.ExcludePchForceIncludes(),
+        PCHCHAIN=[pch for pch in env['PCHCHAIN'] if env.TargetOSIs('windows')],
+        PCH=[],
     )

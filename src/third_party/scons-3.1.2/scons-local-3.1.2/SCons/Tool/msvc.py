@@ -53,88 +53,6 @@ from .MSCommon import msvc_exists, msvc_setup_env_once, msvc_version_to_maj_min
 CSuffixes = ['.c', '.C']
 CXXSuffixes = ['.cc', '.cpp', '.cxx', '.c++', '.C++']
 
-def validate_vars(env):
-    """Validate the PCH and PCHSTOP construction variables."""
-    if 'PCH' in env and env['PCH']:
-        if 'PCHSTOP' not in env:
-            raise SCons.Errors.UserError("The PCHSTOP construction must be defined if PCH is defined.")
-        if not SCons.Util.is_String(env['PCHSTOP']):
-            raise SCons.Errors.UserError("The PCHSTOP construction variable must be a string: %r"%env['PCHSTOP'])
-
-def msvc_set_PCHPDBFLAGS(env):
-    """
-    Set appropriate PCHPDBFLAGS for the MSVC version being used.
-    """
-    if env.get('MSVC_VERSION',False):
-        maj, min = msvc_version_to_maj_min(env['MSVC_VERSION'])
-        if maj < 8:
-            env['PCHPDBFLAGS'] = SCons.Util.CLVar(['${(PDB and "/Yd") or ""}'])
-        else:
-            env['PCHPDBFLAGS'] = ''
-    else:
-        # Default if we can't determine which version of MSVC we're using
-        env['PCHPDBFLAGS'] = SCons.Util.CLVar(['${(PDB and "/Yd") or ""}'])
-
-
-def pch_emitter(target, source, env):
-    """Adds the object file target."""
-
-    validate_vars(env)
-
-    pch = None
-    obj = None
-
-    for t in target:
-        if SCons.Util.splitext(str(t))[1] == '.pch':
-            pch = t
-        if SCons.Util.splitext(str(t))[1] == '.obj':
-            obj = t
-
-    if not obj:
-        obj = SCons.Util.splitext(str(pch))[0]+'.obj'
-
-    target = [pch, obj] # pch must be first, and obj second for the PCHCOM to work
-
-    return (target, source)
-
-def object_emitter(target, source, env, parent_emitter):
-    """Sets up the PCH dependencies for an object file."""
-
-    validate_vars(env)
-
-    parent_emitter(target, source, env)
-
-    # Add a dependency, but only if the target (e.g. 'Source1.obj')
-    # doesn't correspond to the pre-compiled header ('Source1.pch').
-    # If the basenames match, then this was most likely caused by
-    # someone adding the source file to both the env.PCH() and the
-    # env.Program() calls, and adding the explicit dependency would
-    # cause a cycle on the .pch file itself.
-    #
-    # See issue #2505 for a discussion of what to do if it turns
-    # out this assumption causes trouble in the wild:
-    # https://github.com/SCons/scons/issues/2505
-    if 'PCH' in env:
-        pch = env['PCH']
-        if str(target[0]) != SCons.Util.splitext(str(pch))[0] + '.obj':
-            env.Depends(target, pch)
-
-    return (target, source)
-
-def static_object_emitter(target, source, env):
-    return object_emitter(target, source, env,
-                          SCons.Defaults.StaticObjectEmitter)
-
-def shared_object_emitter(target, source, env):
-    return object_emitter(target, source, env,
-                          SCons.Defaults.SharedObjectEmitter)
-
-pch_action = SCons.Action.Action('$PCHCOM', '$PCHCOMSTR')
-pch_builder = SCons.Builder.Builder(action=pch_action, suffix='.pch',
-                                    emitter=pch_emitter,
-                                    source_scanner=SCons.Tool.SourceFileScanner)
-
-
 # Logic to build .rc files into .res files (resource files)
 res_scanner = SCons.Scanner.RC.RCScan()
 res_action  = SCons.Action.Action('$RCCOM', '$RCCOMSTR')
@@ -227,19 +145,18 @@ def generate(env):
     for suffix in CSuffixes:
         static_obj.add_action(suffix, CAction)
         shared_obj.add_action(suffix, ShCAction)
-        static_obj.add_emitter(suffix, static_object_emitter)
-        shared_obj.add_emitter(suffix, shared_object_emitter)
+        static_obj.add_emitter(suffix, SCons.Defaults.StaticObjectEmitter)
+        shared_obj.add_emitter(suffix, SCons.Defaults.SharedObjectEmitter)
 
     for suffix in CXXSuffixes:
         static_obj.add_action(suffix, CXXAction)
         shared_obj.add_action(suffix, ShCXXAction)
-        static_obj.add_emitter(suffix, static_object_emitter)
-        shared_obj.add_emitter(suffix, shared_object_emitter)
+        static_obj.add_emitter(suffix, SCons.Defaults.StaticObjectEmitter)
+        shared_obj.add_emitter(suffix, SCons.Defaults.SharedObjectEmitter)
 
     env['CCPDBFLAGS'] = SCons.Util.CLVar(['${(PDB and "/Z7") or ""}'])
-    env['CCPCHFLAGS'] = SCons.Util.CLVar(['${(PCH and "/Yu%s \\\"/Fp%s\\\""%(PCHSTOP or "",File(PCH))) or ""}'])
     env['_MSVC_OUTPUT_FLAG'] = msvc_output_flag
-    env['_CCCOMCOM']  = '$CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $CCPCHFLAGS $CCPDBFLAGS'
+    env['_CCCOMCOM']  = '$CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $CCPDBFLAGS'
     env['CC']         = 'cl'
     env['CCFLAGS']    = SCons.Util.CLVar('/nologo')
     env['CFLAGS']     = SCons.Util.CLVar('')
@@ -282,17 +199,12 @@ def generate(env):
     env['CFILESUFFIX'] = '.c'
     env['CXXFILESUFFIX'] = '.cc'
 
-    msvc_set_PCHPDBFLAGS(env)
 
     # Issue #3350
     # Change tempfile argument joining character from a space to a newline
     # mslink will fail if any single line is too long, but is fine with many lines
     # in a tempfile
     env['TEMPFILEARGJOIN'] = os.linesep
-
-
-    env['PCHCOM'] = '$CXX /Fo${TARGETS[1]} $CXXFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS /c $SOURCES /Yc$PCHSTOP /Fp${TARGETS[0]} $CCPDBFLAGS $PCHPDBFLAGS'
-    env['BUILDERS']['PCH'] = pch_builder
 
     if 'ENV' not in env:
         env['ENV'] = {}

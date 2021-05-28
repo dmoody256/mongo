@@ -242,6 +242,15 @@ add_option('noshell',
     nargs=0,
 )
 
+add_option('enable-pch',
+    help='Enable usage of PCH. Setting "auto" will prevent usage of SCons cache with PCH due to slower cache.',
+    choices=['on', 'off', 'auto'],
+    default='off',
+    const='off',
+    nargs='?',
+    type='choice',
+)
+
 add_option('dbg',
     choices=['on', 'off'],
     const='on',
@@ -848,6 +857,10 @@ env_vars.Add('REVISION',
     help='Base git revision',
     default='')
 
+env_vars.Add('PCHSIGNATURE',
+    help='Custom build signature to provide for more control with PCH in SCons cache.',
+    default='')
+    
 env_vars.Add('ENTERPRISE_REV',
     help='Base git revision of enterprise modules',
     default='')
@@ -2251,6 +2264,7 @@ elif env.TargetOSIs('windows'):
         "_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING",
         "_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING",
         "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
+        "_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING",
     ])
 
     # /EHsc exception handling style for visual studio
@@ -2342,7 +2356,14 @@ elif env.TargetOSIs('windows'):
     #     object called lock on the stack.
     env.Append( CCFLAGS=["/we4013", "/we4099", "/we4930"] )
 
-    env.Append( CPPDEFINES=["_CONSOLE","_CRT_SECURE_NO_WARNINGS", "_SCL_SECURE_NO_WARNINGS"] )
+    env.Append(
+        CPPDEFINES=[
+            "_CONSOLE",
+            "_CRT_NONSTDC_NO_WARNINGS",
+            "_CRT_SECURE_NO_WARNINGS",
+            "_SCL_SECURE_NO_WARNINGS",
+        ]
+    )
 
     # this would be for pre-compiled headers, could play with it later
     #env.Append( CCFLAGS=['/Yu"pch.h"'] )
@@ -5369,6 +5390,34 @@ with open("resmoke.ini", "w") as resmoke_config:
 [resmoke]
 install_dir = {install_dir}
 """.format(install_dir=resmoke_install_dir))
+
+if get_option('enable-pch') != 'off':
+    if env.ToolchainIs('msvc'):
+
+        if get_option('enable-pch') == 'auto' and not env.get_CacheDir():
+            env.FatalError("'--enable-pch' with 'auto' option is not valid with SCons Cache in use.")
+            
+        pch_tool = Tool('pch')
+        if pch_tool.exists(env):
+            env['PCH_SHARED'] = get_option('link-model').startswith('dynamic')
+            pch_tool(env)
+            if 'ICECC' in env and env['ICECC']:
+                if get_option('build-tools') == 'next':
+                    env.AddIcecreamDepEmitter('PCH', '.h')
+                    if env['ICECREAM_VERSION'] < parse_version('1.2'):
+                        env['_INCLUDEPCH'] = ""
+                else:
+                    env.FatalError('icecream and pch not supported together.')
+
+        if 'CCACHE' in env and env['CCACHE']:
+            # older ccache will not use these correctly (https://github.com/ccache/ccache/issues/235)
+            # and will fail to cache the pch, but newer ccache will need these to work correctly.
+            # These could be a concern for some build systems, but scons is robust
+            # enough with content hashing and dependencies that its doesn't need ccache to worry.
+            env['ENV']['CCACHE_SLOPPINESS'] = 'pch_defines,time_macros,include_file_ctime,include_file_mtime'
+    else:
+        env.FatalError("'--enable-pch' is only supported with MSVC.")
+
 
 env.SConscript(
     dirs=[

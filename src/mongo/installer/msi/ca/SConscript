@@ -36,4 +36,7 @@ ca = env.SharedLibrary(
     ],
     AIB_COMPONENT='msi-util',
     AIB_ROLE='runtime',
+    FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[pch for pch in env['PCHCHAIN'] if env.TargetOSIs('windows')],
+    PCH=[],
 )

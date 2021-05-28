@@ -172,7 +172,6 @@ if wiredtiger and not use_system_version_of_library('wiredtiger'):
 if not use_system_version_of_library('yaml'):
     thirdPartyEnvironmentModifications['yaml'] = {
         'CPPPATH' : ['#/src/third_party/yaml-cpp/yaml-cpp/include'],
-        'CPPDEFINES' : ['_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING'] if env.ToolchainIs('msvc') else [],
     }
 
 if not use_system_version_of_library('asio'):

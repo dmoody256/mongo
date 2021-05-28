@@ -18,7 +18,10 @@ env.Library(
         "$BUILD_DIR/mongo/db/common",
         "$BUILD_DIR/mongo/db/storage/key_string",
         "$BUILD_DIR/third_party/s2/s2"
-    ]
+    ],
+    FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[pch for pch in env['PCHCHAIN'] if env.TargetOSIs('windows')],
+    PCH=[],
 )
 
 # Geometry / BSON parsing and wrapping
@@ -48,5 +51,8 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/common",
         "geometry",
         "geoparser",
-    ]
+    ],
+    FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[pch for pch in env['PCHCHAIN'] if env.TargetOSIs('windows')],
+    PCH=[],
 )

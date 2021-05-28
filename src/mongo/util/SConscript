@@ -453,6 +453,9 @@ env.Library(
     LIBDEPS=[
         "$BUILD_DIR/mongo/base",
     ],
+    FORCEINCLUDES=env.ExcludePchForceIncludes(),
+    PCHCHAIN=[pch for pch in env['PCHCHAIN'] if env.TargetOSIs('windows')],
+    PCH=[],
 )
 
 env.Library(
