@@ -14,6 +14,7 @@ import subprocess
 import sys
 import textwrap
 import uuid
+import hashlib
 from glob import glob
 
 from pkg_resources import parse_version
@@ -5416,6 +5417,13 @@ if pch_tool.exists(env):
         else:
             env.FatalError('icecream and pch not supported together.')
 else: # windows
+    def get_path_hash(path):
+        m = hashlib.md5()
+        m.update(path.encode('utf-8'))
+        return m.hexdigest()
+
+    env['PCHCOM'] += f' /Dcachepath{get_path_hash(env.get_CacheDir().path + env.get("PKGDIR", ""))}'
+    env.Append(CXXFLAGS=[f'/Dcachepath{get_path_hash(env.get_CacheDir().path + env.get("PKGDIR", ""))}'])
     def update_scanner(env, builder):
         """Update the scanner for "builder" to also scan library dependencies."""
 
