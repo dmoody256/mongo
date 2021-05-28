@@ -296,8 +296,8 @@ def generate(env):
         m.update(path.encode('utf-8'))
         return m.hexdigest()
 
-    env['PCHCOM'] = '$CXX /Fo${TARGETS[1]} $CXXFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS /c $SOURCES /Yl- /Yc$PCHSTOP /Fp${TARGETS[0]} $CCPDBFLAGS $PCHPDBFLAGS' + f' -Dcachepath{get_path_hash(env.get_CacheDir().path + env.get("PKGDIR", ""))}'
-    env.Append(CXXFLAGS=[f'-Dcachepath{get_path_hash(env.get_CacheDir().path + env.get("PKGDIR", ""))}'])
+    env['PCHCOM'] = '$CXX /Fo${TARGETS[1]} $CXXFLAGS $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS /c $SOURCES /Yl- /Yc$PCHSTOP /Fp${TARGETS[0]} $CCPDBFLAGS $PCHPDBFLAGS' + f' /Dcachepath{get_path_hash(env.get_CacheDir().path + env.get("PKGDIR", ""))}'
+    env.Append(CXXFLAGS=[f'/Dcachepath{get_path_hash(env.get_CacheDir().path + env.get("PKGDIR", ""))}'])
     env['BUILDERS']['PCH'] = pch_builder
 
     if 'ENV' not in env:
