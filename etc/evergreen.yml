@@ -6959,6 +6959,14 @@ task_groups:
   - compile_all
   - package
 
+- <<: *compile_task_group_template
+  name: compile_only_TG
+  tasks:
+  - compile_dist_test
+  - compile_unittests
+  - compile_dbtest
+  - compile_all
+
 # These `parallel` task groups are only appropriate for builders that
 # use --link-model=dynamic, and have scons_cache_scope: shared and
 # scons_cache_mode: all. Such builders are able to share all build
@@ -8643,9 +8651,7 @@ buildvariants:
     compile_flags: --ssl -j$(sysctl -n hw.logicalcpu) --libc++ --disable-warnings-as-errors --variables-files=etc/scons/xcode_macosx.vars
     resmoke_jobs_max: 6
   tasks:
-  - name: compile_test_and_package_serial_TG
-  - name: compile_ninja_next_TG
-  - name: libdeps_graph_linting_TG
+  - name: compile_only_TG
 
 ###########################################
 #          Embedded SDK buildvariants     #
