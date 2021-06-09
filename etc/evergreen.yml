@@ -8648,7 +8648,7 @@ buildvariants:
     compile_flags: --ssl -j$(sysctl -n hw.logicalcpu) --libc++ --disable-warnings-as-errors --variables-files=etc/scons/xcode_macosx.vars
     resmoke_jobs_max: 6
   tasks:
-  - name: compile_and_test_TG
+  - name: compile_test_and_package_serial_TG
   - name: audit
   - name: auth_audit_gen
   - name: causally_consistent_jscore_txns_passthrough
