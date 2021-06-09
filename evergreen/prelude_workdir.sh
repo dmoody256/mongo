@@ -4,6 +4,7 @@ if [ "Windows_NT" = "$OS" ]; then
   calculated_workdir=$(cygpath -w "$calculated_workdir")
   pwd_cygpath=$(cygpath -w "$pwd_cygpath")
 fi
+workdir="$calculated_workdir"
 if [ -z "$workdir" ]; then
   workdir="$calculated_workdir"
 

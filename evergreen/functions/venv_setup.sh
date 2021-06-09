@@ -39,6 +39,8 @@ toolchain_txt="$pip_dir/toolchain-requirements.txt"
 
 activate_venv
 echo "Upgrading pip to 21.0.1"
+export GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1
+export GRPC_PYTHON_BUILD_SYSTEM_ZLIB=1
 python -m pip --disable-pip-version-check install "pip==21.0.1" || exit 1
 python -m pip --disable-pip-version-check install -r "$toolchain_txt" -q --log install.log
 if [ $? != 0 ]; then

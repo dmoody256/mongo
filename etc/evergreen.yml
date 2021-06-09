@@ -8626,6 +8626,27 @@ buildvariants:
     distros:
     - rhel70-small
 
+- name: enterprise-macos-apple-silicon
+  display_name: Enterprise macOS Apple Silicon
+  modules:
+  - enterprise
+  run_on:
+  - macos-1100-arm64
+  expansions:
+    test_flags: --excludeWithAnyTags=incompatible_with_macos
+    additional_package_targets: archive-mongocryptd archive-mongocryptd-debug archive-mh archive-mh-debug
+    push_path: osx
+    push_bucket: downloads.10gen.com
+    push_name: macos
+    push_arch: arm64-enterprise
+    compile_env: DEVELOPER_DIR=/Applications/Xcode12.4.app
+    compile_flags: --ssl -j$(sysctl -n hw.logicalcpu) --libc++ --disable-warnings-as-errors --variables-files=etc/scons/xcode_macosx.vars
+    resmoke_jobs_max: 6
+  tasks:
+  - name: compile_test_and_package_serial_TG
+  - name: compile_ninja_next_TG
+  - name: libdeps_graph_linting_TG
+
 ###########################################
 #          Embedded SDK buildvariants     #
 ###########################################
