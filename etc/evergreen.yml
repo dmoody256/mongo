@@ -6960,11 +6960,13 @@ task_groups:
   - package
 
 - <<: *compile_task_group_template
-  name: compile_only_TG
+  name: compile_and_test_TG
   tasks:
   - compile_dist_test
   - compile_unittests
+  - run_unittests
   - compile_dbtest
+  - run_dbtest
   - compile_all
 
 # These `parallel` task groups are only appropriate for builders that
@@ -8646,7 +8648,7 @@ buildvariants:
     compile_flags: --ssl -j$(sysctl -n hw.logicalcpu) --libc++ --disable-warnings-as-errors --variables-files=etc/scons/xcode_macosx.vars
     resmoke_jobs_max: 6
   tasks:
-  - name: compile_only_TG
+  - compile_and_test_TG
 
 ###########################################
 #          Embedded SDK buildvariants     #
