@@ -2,6 +2,7 @@
 
 Import("env")
 Import("has_option")
+Import("get_option")
 
 env = env.Clone()
 
