@@ -778,7 +778,6 @@ functions:
         - "src/evergreen/functions/venv_setup.sh"
       env:
         pip_dir: ${pip_dir}
-        workdir: ${workdir}
 
   "upload pip requirements": &upload_pip_requirements
     command: s3.put
@@ -6964,9 +6963,9 @@ task_groups:
   tasks:
   - compile_dist_test
   - compile_unittests
-  - run_unittests
+  #- run_unittests
   - compile_dbtest
-  - run_dbtest
+  #- run_dbtest
   - compile_all
 
 # These `parallel` task groups are only appropriate for builders that
