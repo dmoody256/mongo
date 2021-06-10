@@ -6963,7 +6963,7 @@ task_groups:
   tasks:
   - compile_dist_test
   - compile_unittests
-  #- run_unittests
+  - run_unittests
   - compile_dbtest
   #- run_dbtest
   - compile_all
@@ -8636,7 +8636,7 @@ buildvariants:
     - rhel70-small
 
 - name: enterprise-macos-apple-rosetta-2
-  display_name: Enterprise macOS Apple Rosetta 2
+  display_name: Enterprise macOS Rosetta 2
   modules:
   - enterprise
   run_on:
@@ -8653,7 +8653,6 @@ buildvariants:
   - name: causally_consistent_jscore_txns_passthrough
   - name: .encrypt !.replica_sets !.sharding !.aggregation !.jscore !.ssl
   - name: .jscore .common !.decimal !.sharding
-  - name: .jstestfuzz .common
   - name: .logical_session_cache .one_sec
   - name: mqlrun
   - name: replica_sets_auth_gen
