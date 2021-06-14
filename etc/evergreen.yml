@@ -1464,7 +1464,7 @@ functions:
         echo "t: $SNMP_INCLUDE_SLASH"
 
         ${compile_env|} $python ./buildscripts/scons.py                                     \
-            ${compile_flags|} ${task_compile_flags|} CPPPATH="\"c:/sasl/include $SNMP_INCLUDE_SLASH\"" LIBPATH="\"c:/sasl/lib $SNMP_LIB_SLASH\"" ${task_compile_flags_extra|}           \
+            ${compile_flags|} ${task_compile_flags|} CPPPATH="c:/sasl/include $SNMP_INCLUDE_SLASH" LIBPATH="c:/sasl/lib $SNMP_LIB_SLASH" ${task_compile_flags_extra|}           \
             ${scons_cache_args|} $extra_args                                                \
             ${targets} ${additional_targets|} MONGO_VERSION=${version} || exit_status=$?
         # If compile fails we do not run any tests
