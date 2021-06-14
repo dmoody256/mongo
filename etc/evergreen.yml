@@ -1457,11 +1457,11 @@ functions:
 
         unzip snmp.zip
         SNMP_INCLUDE="$(cygpath -w $PWD/snmp/include)"
-        SNMP_INCLUDE_SLASH=${SNMP_INCLUDE//\\//}
+        SNMP_INCLUDE_SLASH=${{SNMP_INCLUDE//\\//}}
 
         SNMP_LIB="$(cygpath -w $PWD/snmp/lib)"
-        SNMP_LIB_SLASH=${SNMP_LIB//\\//}
-        echo "t: $SNMP_INCLUDE_SLASH"å
+        SNMP_LIB_SLASH=${{SNMP_LIB//\\//}}
+        echo "t: $SNMP_INCLUDE_SLASH"
 
         ${compile_env|} $python ./buildscripts/scons.py                                     \
             ${compile_flags|} ${task_compile_flags|} CPPPATH="\"c:/sasl/include $SNMP_INCLUDE_SLASH\"" LIBPATH="\"c:/sasl/lib $SNMP_LIB_SLASH\"" ${task_compile_flags_extra|}           \
