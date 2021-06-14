@@ -1457,10 +1457,10 @@ functions:
 
         unzip snmp.zip
         SNMP_INCLUDE="$(cygpath -w $PWD/snmp/include)"
-        SNMP_INCLUDE_SLASH=${{SNMP_INCLUDE//\\//}}
+        SNMP_INCLUDE_SLASH=$(echo "$SNMP_INCLUDE" | sed 's/\\/\//g')
 
         SNMP_LIB="$(cygpath -w $PWD/snmp/lib)"
-        SNMP_LIB_SLASH=${{SNMP_LIB//\\//}}
+        SNMP_LIB_SLASH=$(echo "$SNMP_LIB" | sed 's/\\/\//g')
         echo "t: $SNMP_INCLUDE_SLASH"
 
         ${compile_env|} $python ./buildscripts/scons.py                                     \
