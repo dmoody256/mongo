@@ -247,7 +247,7 @@ variables:
     exe: ".exe"
     msi_target: msi
     content_type: application/zip
-    compile_flags: --release --ssl MONGO_DISTMOD=windows-64 CPPPATH="c:/sasl/include c:/snmp/include" LIBPATH="c:/sasl/lib c:/snmp/lib" -j$(( $(grep -c ^processor /proc/cpuinfo) / 2 )) --win-version-min=ws08r2
+    compile_flags: --release --ssl MONGO_DISTMOD=windows-64 -j$(( $(grep -c ^processor /proc/cpuinfo) / 2 )) --win-version-min=ws08r2
     # We invoke SCons using --jobs = (# of CPUs / 4) to avoid causing out of memory errors due to
     # spawning a large number of linker processes.
     num_scons_link_jobs_available: $(( $(grep -c ^processor /proc/cpuinfo) / 4 ))
@@ -1455,8 +1455,16 @@ functions:
 
         ${activate_virtualenv}
 
+        unzip snmp.zip
+        SNMP_INCLUDE="$(cygpath -w $PWD/snmp/include)"
+        SNMP_INCLUDE_SLASH=${SNMP_INCLUDE//\\//}
+
+        SNMP_LIB="$(cygpath -w $PWD/snmp/lib)"
+        SNMP_LIB_SLASH=${SNMP_LIB//\\//}
+        echo "t: $SNMP_INCLUDE_SLASH"å
+
         ${compile_env|} $python ./buildscripts/scons.py                                     \
-            ${compile_flags|} ${task_compile_flags|} ${task_compile_flags_extra|}           \
+            ${compile_flags|} ${task_compile_flags|} CPPPATH="\"c:/sasl/include $SNMP_INCLUDE_SLASH\"" LIBPATH="\"c:/sasl/lib $SNMP_LIB_SLASH\"" ${task_compile_flags_extra|}           \
             ${scons_cache_args|} $extra_args                                                \
             ${targets} ${additional_targets|} MONGO_VERSION=${version} || exit_status=$?
         # If compile fails we do not run any tests
@@ -8233,7 +8241,7 @@ buildvariants:
     msi_target: msi
     mh_target: dist-mh
     content_type: application/zip
-    compile_flags: --release --ssl MONGO_DISTMOD=windows-64 CPPPATH="c:/sasl/include c:/snmp/include" LIBPATH="c:/sasl/lib c:/snmp/lib" -j$(( $(grep -c ^processor /proc/cpuinfo) / 2 )) --win-version-min=ws08r2
+    compile_flags: --release --ssl MONGO_DISTMOD=windows-64  -j$(( $(grep -c ^processor /proc/cpuinfo) / 2 )) --win-version-min=ws08r2
     # We invoke SCons using --jobs = (# of CPUs / 4) to avoid causing out of memory errors due to
     # spawning a large number of linker processes.
     num_scons_link_jobs_available: $(( $(grep -c ^processor /proc/cpuinfo) / 4 ))
@@ -8404,7 +8412,7 @@ buildvariants:
     exe: ".exe"
     msi_target: msi
     content_type: application/zip
-    compile_flags: --release --ssl MONGO_DISTMOD=windows-64 CPPPATH="c:/sasl/include c:/snmp/include" LIBPATH="c:/sasl/lib c:/snmp/lib" -j$(( $(grep -c ^processor /proc/cpuinfo) / 2 )) --win-version-min=ws08r2
+    compile_flags: --release --ssl MONGO_DISTMOD=windows-64  -j$(( $(grep -c ^processor /proc/cpuinfo) / 2 )) --win-version-min=ws08r2
     # We invoke SCons using --jobs = (# of CPUs / 4) to avoid causing out of memory errors due to
     # spawning a large number of linker processes.
     num_scons_link_jobs_available: $(( $(grep -c ^processor /proc/cpuinfo) / 4 ))
@@ -8438,7 +8446,7 @@ buildvariants:
     exe: ".exe"
     msi_target: msi
     content_type: application/zip
-    compile_flags: --release --ssl MONGO_DISTMOD=windows-64 CPPPATH="c:/sasl/include c:/snmp/include" LIBPATH="c:/sasl/lib c:/snmp/lib" -j$(( $(grep -c ^processor /proc/cpuinfo) / 2 )) --win-version-min=ws08r2
+    compile_flags: --release --ssl MONGO_DISTMOD=windows-64  -j$(( $(grep -c ^processor /proc/cpuinfo) / 2 )) --win-version-min=ws08r2
     # We invoke SCons using --jobs = (# of CPUs / 4) to avoid causing out of memory errors due to
     # spawning a large number of linker processes.
     num_scons_link_jobs_available: $(( $(grep -c ^processor /proc/cpuinfo) / 4 ))
@@ -8546,7 +8554,7 @@ buildvariants:
     platform_decompress: unzip
     exe: ".exe"
     content_type: application/zip
-    compile_flags: --dbg=on --opt=off --ssl MONGO_DISTMOD=2012plus CPPPATH="c:/sasl/include c:/snmp/include" LIBPATH="c:/sasl/lib c:/snmp/lib" -j$(( $(grep -c ^processor /proc/cpuinfo) / 2 )) --win-version-min=ws08r2
+    compile_flags: --dbg=on --opt=off --ssl MONGO_DISTMOD=2012plus  -j$(( $(grep -c ^processor /proc/cpuinfo) / 2 )) --win-version-min=ws08r2
     # We invoke SCons using --jobs = (# of CPUs / 4) to avoid causing out of memory errors due to
     # spawning a large number of linker processes.
     num_scons_link_jobs_available: $(( $(grep -c ^processor /proc/cpuinfo) / 4 ))
