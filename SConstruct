@@ -242,6 +242,15 @@ add_option('noshell',
     nargs=0,
 )
 
+add_option('enable-pch',
+    help='Enable usage of PCH. Setting "auto" will prevent usage of SCons cache with PCH due to slower cache.',
+    choices=['on', 'off', 'auto'],
+    default='off',
+    const='off',
+    nargs='?',
+    type='choice',
+)
+
 add_option('dbg',
     choices=['on', 'off'],
     const='on',
@@ -2251,6 +2260,7 @@ elif env.TargetOSIs('windows'):
         "_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING",
         "_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING",
         "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
+        "_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING",
     ])
 
     # /EHsc exception handling style for visual studio
@@ -2342,7 +2352,14 @@ elif env.TargetOSIs('windows'):
     #     object called lock on the stack.
     env.Append( CCFLAGS=["/we4013", "/we4099", "/we4930"] )
 
-    env.Append( CPPDEFINES=["_CONSOLE","_CRT_SECURE_NO_WARNINGS", "_SCL_SECURE_NO_WARNINGS"] )
+    env.Append(
+        CPPDEFINES=[
+            "_CONSOLE",
+            "_CRT_NONSTDC_NO_WARNINGS",
+            "_CRT_SECURE_NO_WARNINGS",
+            "_SCL_SECURE_NO_WARNINGS",
+        ]
+    )
 
     # this would be for pre-compiled headers, could play with it later
     #env.Append( CCFLAGS=['/Yu"pch.h"'] )
@@ -5369,6 +5386,67 @@ with open("resmoke.ini", "w") as resmoke_config:
 [resmoke]
 install_dir = {install_dir}
 """.format(install_dir=resmoke_install_dir))
+
+
+if get_option('enable-pch') != 'off':
+    if env.ToolchainIs('msvc'):
+
+        if get_option('enable-pch') == 'auto' and not env.get_CacheDir():
+            env.FatalError("'--enable-pch' with 'auto' option is not valid with SCons Cache in use.")
+            
+        def setup_pch(env):
+            pchEnv = env.Clone()
+            pchEnv['PCHSTOP'] = ''
+            pchEnv['FORCEINCLUDES'] = []
+            env['PCH'] = pchEnv.PCH('mongo_pch.h')[0]
+            env['PCHSTOP'] = 'mongo/mongo_pch.h'
+            env.PrependUnique(
+                FORCEINCLUDES=[
+                    'mongo/mongo_pch.h'
+                ],
+            )
+        env.AddMethod(setup_pch, 'SetupPch')
+
+        def update_scanner(env, builder):
+
+            old_scanner = builder.target_scanner
+            if old_scanner:
+                path_function = old_scanner.path_function
+            else:
+                path_function = None
+            def new_scanner(node, env, path=()):
+                if old_scanner:
+                    result = old_scanner.function(node, env, path)
+                else:
+                    result = []
+
+                pchobjs = []
+                for lib in result:
+                    for child in lib.sources:
+
+                        if child.get_env().get('PCH'):
+                            pch_obj = child.get_env().File(str(child.get_env().get('PCH'))[:-len('.pch')] + env['OBJSUFFIX'])
+                            if pch_obj not in pchobjs:
+                                pchobjs.append(pch_obj)
+
+                result += pchobjs
+
+                return result
+
+            builder.target_scanner = SCons.Scanner.Scanner(
+                function=new_scanner, path_function=path_function
+            )
+
+        update_scanner(env, env['BUILDERS']['Program'])
+        update_scanner(env, env['BUILDERS']['SharedLibrary'])
+        update_scanner(env, env['BUILDERS']['SharedArchive'])
+        update_scanner(env, env['BUILDERS']['StaticLibrary'])
+        update_scanner(env, SCons.Environment.AliasBuilder)
+
+    else:
+        env.FatalError("'--enable-pch' is only supported with MSVC.")
+else:
+    env.AddMethod(lambda env: None, 'SetupPch')
 
 env.SConscript(
     dirs=[

@@ -48,6 +48,8 @@ env.AppendUnique(
     ],
 )
 
+env.SetupPch()
+
 env.SConscript(
     dirs=[
         'base',

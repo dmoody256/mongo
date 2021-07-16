@@ -47,7 +47,7 @@ def generate_test_execution_aliases(env, test):
             continue
 
         source_name = source_base_name[:dot_idx]
-        if target_name == source_name:
+        if target_name == source_name or source_name.endswith('_pch'):
             continue
 
         source_command = env.Command(

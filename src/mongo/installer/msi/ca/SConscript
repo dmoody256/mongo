@@ -36,4 +36,5 @@ ca = env.SharedLibrary(
     ],
     AIB_COMPONENT='msi-util',
     AIB_ROLE='runtime',
+    PCH=None
 )
