@@ -5407,42 +5407,6 @@ if get_option('enable-pch') != 'off':
             )
         env.AddMethod(setup_pch, 'SetupPch')
 
-        def update_scanner(env, builder):
-
-            old_scanner = builder.target_scanner
-            if old_scanner:
-                path_function = old_scanner.path_function
-            else:
-                path_function = None
-            def new_scanner(node, env, path=()):
-                if old_scanner:
-                    result = old_scanner.function(node, env, path)
-                else:
-                    result = []
-
-                pchobjs = []
-                for lib in result:
-                    for child in lib.sources:
-
-                        if child.get_env().get('PCH'):
-                            pch_obj = child.get_env().File(str(child.get_env().get('PCH'))[:-len('.pch')] + env['OBJSUFFIX'])
-                            if pch_obj not in pchobjs:
-                                pchobjs.append(pch_obj)
-
-                result += pchobjs
-
-                return result
-
-            builder.target_scanner = SCons.Scanner.Scanner(
-                function=new_scanner, path_function=path_function
-            )
-
-        update_scanner(env, env['BUILDERS']['Program'])
-        update_scanner(env, env['BUILDERS']['SharedLibrary'])
-        update_scanner(env, env['BUILDERS']['SharedArchive'])
-        update_scanner(env, env['BUILDERS']['StaticLibrary'])
-        update_scanner(env, SCons.Environment.AliasBuilder)
-
     else:
         env.FatalError("'--enable-pch' is only supported with MSVC.")
 else:
